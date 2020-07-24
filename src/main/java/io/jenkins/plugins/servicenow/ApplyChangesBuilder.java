@@ -1,9 +1,9 @@
 package io.jenkins.plugins.servicenow;
 
-import hudson.AbortException;
-import hudson.Extension;
-import hudson.FilePath;
-import hudson.Launcher;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import hudson.*;
 import hudson.model.AbstractProject;
 import hudson.model.Run;
 import hudson.model.TaskListener;
@@ -35,34 +35,24 @@ public class ApplyChangesBuilder extends Builder implements SimpleBuildStep {
     private static final int CHECK_PROGRESS_INTERVAL = 5000;
 
     private String url;
-    private String username;
-    private String password;
+    private String credentialsId;
     private String apiVersion;
     private String appScope;
     private String appSysId;
     private String branchName;
 
     @DataBoundConstructor
-    public ApplyChangesBuilder(String username, String password) {
+    public ApplyChangesBuilder(String credentialsId) {
         super();
-        this.username = username;
-        this.password = password;
+        this.credentialsId = credentialsId;
     }
 
-    public String getUsername() {
-        return username;
+    public String getCredentialsId() {
+        return credentialsId;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
+    public void setCredentialsId(String credentialsId) {
+        this.credentialsId = credentialsId;
     }
 
     public String getUrl() {
@@ -111,20 +101,20 @@ public class ApplyChangesBuilder extends Builder implements SimpleBuildStep {
     }
 
     @Override
-    public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher, @Nonnull TaskListener taskListener) throws InterruptedException, IOException {
+    public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher,
+            @Nonnull TaskListener taskListener) throws InterruptedException, IOException {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 
-        taskListener.getLogger().println("Retrieving API key");
+        setupBuilderParameters(run.getEnvironment(taskListener));
 
-//        FileCredentials fileCredentials = CredentialsProvider.findCredentialById(credentialsId, FileCredentials.class, run,
-//                new DomainRequirement());
+        final StandardUsernamePasswordCredentials usernamePasswordCredentials =
+                CredentialsProvider.findCredentialById(this.getCredentialsId(), StandardUsernamePasswordCredentials.class, run, new DomainRequirement());
+        final int progressCheckInterval = Integer.parseInt(run.getEnvironment((taskListener)).get(Parameters.progressCheckInterval, String.valueOf(CHECK_PROGRESS_INTERVAL)));
 
-//        String apiKeyFromCredentials;
-        boolean success = performApplyChanges(taskListener);
+        boolean success = performApplyChanges(taskListener, usernamePasswordCredentials.getUsername(), usernamePasswordCredentials.getPassword().getPlainText(), progressCheckInterval);
 
         stopWatch.stop();
-
         Long durationInMillis = stopWatch.getTotalTimeMillis();
         long millis = durationInMillis % 1000;
         long second = (durationInMillis / 1000) % 60;
@@ -134,15 +124,35 @@ public class ApplyChangesBuilder extends Builder implements SimpleBuildStep {
         String time = String.format("%02d:%02d:%02d.%d", hour, minute, second, millis);
         taskListener.getLogger().println(String.format("Elapsed Time: %s ([%f] seconds)", time, stopWatch.getTotalTimeSeconds()));
 
-        if (!success) {
+        if(!success) {
             throw new AbortException("Build Failed");
         }
     }
 
-    private boolean performApplyChanges(@Nonnull TaskListener taskListener) {
+    private void setupBuilderParameters(EnvVars environment) throws IOException, InterruptedException {
+        if(StringUtils.isBlank(this.url)) {
+            this.url = environment.get(Parameters.instanceUrl);
+        }
+        if(StringUtils.isBlank(this.credentialsId)) {
+            this.credentialsId = environment.get(Parameters.credentials);
+        }
+
+        if(StringUtils.isBlank(this.apiVersion)) {
+            this.apiVersion = environment.get(Parameters.apiVersion);
+        }
+        if(StringUtils.isBlank(this.appScope)) {
+            this.appScope = environment.get(Parameters.appScope);
+        }
+        if(StringUtils.isBlank(this.appSysId)) {
+            this.appSysId = environment.get(Parameters.appSysId);
+        }
+        if(StringUtils.isBlank(this.branchName)) {
+            this.branchName = environment.get(Parameters.branchName);
+        }
+    }
+
+    private boolean performApplyChanges(@Nonnull TaskListener taskListener, final String username, final String password, int progressCheckInterval) {
         boolean result = false;
-        final String username = StringUtils.isNotBlank(this.username) ? this.username : "admin";
-        final String password = this.password;
 
         taskListener.getLogger().format("Call API: %s\nusing:\n - username: %s\n - password: %s\n", this.url, username, password.replaceAll(".", "*"));
 
@@ -164,7 +174,7 @@ public class ApplyChangesBuilder extends Builder implements SimpleBuildStep {
                 if(!ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
                     taskListener.getLogger().println("Checking progress...");
                     try {
-                        serviceNowResult = checkProgress(restClient, taskListener.getLogger());
+                        serviceNowResult = checkProgress(restClient, taskListener.getLogger(), progressCheckInterval);
                     } catch(InterruptedException e) {
                         serviceNowResult = null;
                         e.printStackTrace();
@@ -184,7 +194,7 @@ public class ApplyChangesBuilder extends Builder implements SimpleBuildStep {
         return result;
     }
 
-    private Result checkProgress(ServiceNowAPIClient restClient, PrintStream logger) throws InterruptedException {
+    private Result checkProgress(ServiceNowAPIClient restClient, PrintStream logger, int progressCheckInterval) throws InterruptedException {
         Result result = null;
         logger.println("");
         do {
@@ -193,10 +203,10 @@ public class ApplyChangesBuilder extends Builder implements SimpleBuildStep {
                 final int progress = result.getPercentComplete();
                 logger.print("\rProgress: " + progress + "%");
                 if(progress != 100) {
-                    Thread.sleep(CHECK_PROGRESS_INTERVAL);
+                    Thread.sleep(progressCheckInterval);
                 }
             }
-        } while (result != null &&
+        } while(result != null &&
                 !ActionStatus.FAILED.getStatus().equals(result.getStatus()) &&
                 !ActionStatus.SUCCESSFUL.getStatus().equals(result.getStatus()));
 
@@ -207,7 +217,7 @@ public class ApplyChangesBuilder extends Builder implements SimpleBuildStep {
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
-        public FormValidation doCheckName(@QueryParameter String url, @QueryParameter String username, @QueryParameter String password)
+        public FormValidation doCheckName(@QueryParameter String url)
                 throws IOException, ServletException {
 
             final String regex = "^https?://.+";
