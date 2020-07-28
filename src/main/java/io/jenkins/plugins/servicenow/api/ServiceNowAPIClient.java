@@ -51,6 +51,18 @@ public class ServiceNowAPIClient {
         return lastActionProgressUrl;
     }
 
+    public AcceptResponseType acceptResponseType = AcceptResponseType.JSON;
+
+    private String getAcceptResponseType() {
+        switch(acceptResponseType) {
+            case JSON:
+                return MediaType.JSON;
+            case XML:
+                return MediaType.XML;
+        }
+        return MediaType.JSON;
+    }
+
     /**
      *
      * @param url URL of the ServiceNow API
@@ -66,8 +78,6 @@ public class ServiceNowAPIClient {
         this.password = password;
     }
 
-    //public static boolean
-
     public Result applyChanges(
             final String applicationScope,
             final String systemId,
@@ -76,28 +86,32 @@ public class ServiceNowAPIClient {
         LOG.info("ServiceNow API call > applyChanges");
 
         List<NameValuePair> params = new ArrayList<>();
-        if(StringUtils.isNotBlank(applicationScope)) {
-            params.add(new BasicNameValuePair(RequestParameters.APP_SCOPE, applicationScope));
-        }
-        if(StringUtils.isNotBlank(systemId)) {
-            params.add(new BasicNameValuePair(RequestParameters.SYSTEM_ID, systemId));
-        }
-        if(StringUtils.isNotBlank(branchName)) {
-            params.add(new BasicNameValuePair(RequestParameters.BRANCH_NAME, branchName));
-        }
+        addParameter(params, RequestParameters.APP_SCOPE, applicationScope);
+        addParameter(params, RequestParameters.SYSTEM_ID, systemId);
+        addParameter(params, RequestParameters.BRANCH_NAME, branchName);
 
-        Response response = this.post(endpoint, params, null);
+        return sendRequest(endpoint, params, null);
+    }
 
-        final Result result = response != null ? response.getResult() : null;
-        if(result != null) {
-            if(ActionStatus.FAILED.getStatus().equals(result.getStatus())) {
-                LOG.warn("Response with failed result came for the request 'applyChanges': " + response.toString());
-            } else if(result.getLinks().getProgress() != null) {
-                this.lastActionProgressUrl = result.getLinks().getProgress().getUrl();
-            }
-        }
+    public Result runTestSuite(
+            final String testSuiteName,
+            final String testSuiteSysId,
+            final String osName,
+            final String osVersion,
+            final String browserName,
+            final String browserVersion) {
+        final String endpoint = "testsuite/run";
+        LOG.info("ServiceNow API call > runTestSuite");
 
-        return result;
+        List<NameValuePair> params = new ArrayList<>();
+        addParameter(params, RequestParameters.TEST_SUITE_NAME, testSuiteName);
+        addParameter(params, RequestParameters.TEST_SUITE_SYS_ID, testSuiteSysId);
+        addParameter(params, RequestParameters.OS_NAME, osName);
+        addParameter(params, RequestParameters.OS_VERSION, osVersion);
+        addParameter(params, RequestParameters.BROWSER_NAME, browserName);
+        addParameter(params, RequestParameters.BROWSER_VERSION, browserVersion);
+
+        return sendRequest(endpoint, params, null);
     }
 
     public Result checkProgress() {
@@ -105,12 +119,46 @@ public class ServiceNowAPIClient {
             throw new IllegalStateException("Did you forget to call action? Action request must be called first to have active link to the progress!");
         }
         final String endpoint = this.lastActionProgressUrl;
-        final Response response = get(endpoint, null);
 
+        return sendRequest(endpoint, null);
+    }
+
+    /**
+     * Send POST request using following parameters.
+     * @param endpoint End-point path
+     * @param params Request parameters
+     * @param jsonBody Body of the request (as JSON object)
+     * @return Result of the response or null if there was thrown an exception.
+     */
+    private Result sendRequest(String endpoint, List<NameValuePair> params, JsonData jsonBody) {
+        Response response = this.post(endpoint, params, jsonBody);
+
+        return getResult(endpoint, response);
+    }
+
+    /**
+     * Send GET request.
+     * @param endpoint End-point path
+     * @param params Request parameters
+     * @return Result of the response or null if there was thrown an exception.
+     */
+    private Result sendRequest(String endpoint, List<NameValuePair> params) {
+        Response response = this.get(endpoint, params);
+
+        return getResult(endpoint, response);
+    }
+
+    private void addParameter(final List<NameValuePair> toParamsList, final String paramName, final String paramValue) {
+        if(StringUtils.isNotBlank(paramValue)) {
+            toParamsList.add(new BasicNameValuePair(paramName, paramValue));
+        }
+    }
+
+    private Result getResult(String endpoint, Response response) {
         final Result result = response != null ? response.getResult() : null;
         if(result != null) {
             if(ActionStatus.FAILED.getStatus().equals(result.getStatus())) {
-                LOG.warn("Response with failed result came for the request 'checkProgress': " + response.toString());
+                LOG.warn("Response with failed result came for the request '" + endpoint + "': " + response.toString());
             } else if(result.getLinks().getProgress() != null) {
                 this.lastActionProgressUrl = result.getLinks().getProgress().getUrl();
             }
@@ -123,7 +171,7 @@ public class ServiceNowAPIClient {
         try(CloseableHttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(getCredentials()).build()) {
 
             HttpGet request = new HttpGet();
-            HttpResponse response = callRequest(client, request, endpointPath, parameters, null); //client.execute(request);
+            HttpResponse response = sendRequest(client, request, endpointPath, parameters, null); //client.execute(request);
 
             final int responseStatusCode = response.getStatusLine().getStatusCode();
             if(responseStatusCode < 200 || responseStatusCode > 202) {
@@ -132,16 +180,7 @@ public class ServiceNowAPIClient {
                 this.lastActionProgressUrl = StringUtils.EMPTY;
             }
 
-            String responseJSON = EntityUtils.toString(response.getEntity());
-            LOG.info(responseJSON);
-            Response result = new ObjectMapper().readValue(responseJSON, Response.class);
-            if(result.getError() != null) {
-                Error error = result.getError();
-                LOG.error(error);
-                throw new ServiceNowApiException(error.getMessage(), error.getDetail());
-            }
-
-            return result;
+            return getResponse(response);
         } catch(URISyntaxException ex) {
             LOG.error("Wrong URL: " + ex.getMessage());
         } catch(IOException ex) {
@@ -155,23 +194,14 @@ public class ServiceNowAPIClient {
         try(CloseableHttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(getCredentials()).build()) {
 
             HttpPost request = new HttpPost();
-            HttpResponse response = callRequest(client, request, endpointPath, parameters, jsonBody); //client.execute(request);
+            HttpResponse response = sendRequest(client, request, endpointPath, parameters, jsonBody); //client.execute(request);
 
             final int responseStatusCode = response.getStatusLine().getStatusCode();
             if(responseStatusCode < 200 || responseStatusCode > 202) {
                 LOG.error("POST request [" + request.getURI().toString() + "] call with error status: " + responseStatusCode);
             }
 
-            String responseJSON = EntityUtils.toString(response.getEntity());
-            LOG.info(responseJSON);
-            Response result = new ObjectMapper().readValue(responseJSON, Response.class);
-            if(result.getError() != null) {
-                Error error = result.getError();
-                LOG.error(error);
-                throw new ServiceNowApiException(error.getMessage(), error.getDetail());
-            }
-
-            return result;
+            return getResponse(response);
         } catch(URISyntaxException ex) {
             LOG.error("Wrong URL: " + ex.getMessage());
         } catch(IOException ex) {
@@ -181,7 +211,20 @@ public class ServiceNowAPIClient {
         return null;
     }
 
-    private HttpResponse callRequest(final CloseableHttpClient client, final HttpRequestBase request, final String endpointPath, final List<NameValuePair> parameters, final JsonData jsonBody) throws URISyntaxException, IOException {
+    private Response getResponse(HttpResponse response) throws IOException {
+        String responseJSON = EntityUtils.toString(response.getEntity());
+        LOG.info(responseJSON);
+        Response result = new ObjectMapper().readValue(responseJSON, Response.class);
+        if(result.getError() != null) {
+            Error error = result.getError();
+            LOG.error(error);
+            throw new ServiceNowApiException(error.getMessage(), error.getDetail());
+        }
+
+        return result;
+    }
+
+    private HttpResponse sendRequest(final CloseableHttpClient client, final HttpRequestBase request, final String endpointPath, final List<NameValuePair> parameters, final JsonData jsonBody) throws URISyntaxException, IOException {
         URIBuilder uriBuilder = new URIBuilder(isURL(endpointPath) ? endpointPath : this.getCICDApiUrl() + endpointPath);
         if(parameters != null) {
             uriBuilder.setParameters(parameters);
@@ -189,8 +232,8 @@ public class ServiceNowAPIClient {
 
         request.setURI(uriBuilder.build());
         request.setHeader(HttpHeaders.USER_AGENT, "Jenkins plugin client");
-        request.setHeader(HttpHeaders.ACCEPT, "application/json");
-        request.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+        request.setHeader(HttpHeaders.ACCEPT, getAcceptResponseType());
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.JSON);
 
         if(jsonBody != null && request instanceof HttpPost) {
             final HttpEntity requestBody = new StringEntity(new ObjectMapper().writeValueAsString(jsonBody));
@@ -212,5 +255,15 @@ public class ServiceNowAPIClient {
     private boolean isURL(String value) {
         final String regex = "^https?://.+";
         return value.matches(regex);
+    }
+
+    public enum AcceptResponseType {
+        JSON,
+        XML
+    }
+
+    private interface MediaType {
+        String JSON = "application/json";
+        String XML = "application/xml";
     }
 }
