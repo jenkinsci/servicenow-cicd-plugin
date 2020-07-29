@@ -110,7 +110,7 @@ public class ApplyChangesBuilder extends Builder implements SimpleBuildStep {
 
         final StandardUsernamePasswordCredentials usernamePasswordCredentials =
                 CredentialsProvider.findCredentialById(this.getCredentialsId(), StandardUsernamePasswordCredentials.class, run, new DomainRequirement());
-        final int progressCheckInterval = Integer.parseInt(run.getEnvironment((taskListener)).get(Parameters.progressCheckInterval, String.valueOf(CHECK_PROGRESS_INTERVAL)));
+        final int progressCheckInterval = Integer.parseInt(run.getEnvironment((taskListener)).get(BuildParameters.progressCheckInterval, String.valueOf(CHECK_PROGRESS_INTERVAL)));
 
         boolean success = performApplyChanges(taskListener, usernamePasswordCredentials.getUsername(), usernamePasswordCredentials.getPassword().getPlainText(), progressCheckInterval);
 
@@ -131,23 +131,23 @@ public class ApplyChangesBuilder extends Builder implements SimpleBuildStep {
 
     private void setupBuilderParameters(EnvVars environment) throws IOException, InterruptedException {
         if(StringUtils.isBlank(this.url)) {
-            this.url = environment.get(Parameters.instanceUrl);
+            this.url = environment.get(BuildParameters.instanceUrl);
         }
         if(StringUtils.isBlank(this.credentialsId)) {
-            this.credentialsId = environment.get(Parameters.credentials);
+            this.credentialsId = environment.get(BuildParameters.credentials);
         }
 
         if(StringUtils.isBlank(this.apiVersion)) {
-            this.apiVersion = environment.get(Parameters.apiVersion);
+            this.apiVersion = environment.get(BuildParameters.apiVersion);
         }
         if(StringUtils.isBlank(this.appScope)) {
-            this.appScope = environment.get(Parameters.appScope);
+            this.appScope = environment.get(BuildParameters.appScope);
         }
         if(StringUtils.isBlank(this.appSysId)) {
-            this.appSysId = environment.get(Parameters.appSysId);
+            this.appSysId = environment.get(BuildParameters.appSysId);
         }
         if(StringUtils.isBlank(this.branchName)) {
-            this.branchName = environment.get(Parameters.branchName);
+            this.branchName = environment.get(BuildParameters.branchName);
         }
     }
 

@@ -123,6 +123,19 @@ public class ServiceNowAPIClient {
         return sendRequest(endpoint, null);
     }
 
+    public Result getTestSuiteResults(String resultsId) {
+        String endpoint = "testsuite/results/";
+        LOG.info("ServiceNow API call > runTestSuite");
+
+        if(StringUtils.isBlank(resultsId)) {
+            throw new ServiceNowApiException("Missing parameter 'results_id", "Parameter 'results_id is require when following API end-point is called " + endpoint);
+        } else {
+            endpoint += resultsId;
+        }
+
+        return sendRequest(endpoint, null);
+    }
+
     /**
      * Send POST request using following parameters.
      * @param endpoint End-point path

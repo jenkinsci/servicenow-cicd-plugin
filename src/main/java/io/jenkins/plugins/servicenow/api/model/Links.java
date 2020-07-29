@@ -7,6 +7,9 @@ public class Links extends JsonResponseObject {
     private LinkObject progress;
 
     @JsonProperty
+    private LinkObject results;
+
+    @JsonProperty
     private LinkObject source;
 
     public LinkObject getProgress() {
@@ -15,6 +18,14 @@ public class Links extends JsonResponseObject {
 
     public void setProgress(LinkObject progress) {
         this.progress = progress;
+    }
+
+    public LinkObject getResults() {
+        return results;
+    }
+
+    public void setResults(LinkObject results) {
+        this.results = results;
     }
 
     public LinkObject getSource() {

@@ -3,6 +3,7 @@ package io.jenkins.plugins.servicenow;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.iwombat.util.StringUtil;
 import hudson.*;
 import hudson.model.AbstractProject;
 import hudson.model.Run;
@@ -12,6 +13,7 @@ import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import io.jenkins.plugins.servicenow.api.ActionStatus;
+import io.jenkins.plugins.servicenow.api.ResponseUnboundParameters;
 import io.jenkins.plugins.servicenow.api.ServiceNowAPIClient;
 import io.jenkins.plugins.servicenow.api.ServiceNowAPIClient.AcceptResponseType;
 import io.jenkins.plugins.servicenow.api.ServiceNowApiException;
@@ -28,8 +30,10 @@ import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.text.MessageFormat;
+import java.util.Map;
 
-public class RunTestSuiteBuilder extends Builder implements SimpleBuildStep {
+public class RunTestSuiteWithResultsBuilder extends Builder implements SimpleBuildStep {
 
     /**
      * Interval in milliseconds between next progress check (ServiceNow API call).
@@ -46,9 +50,10 @@ public class RunTestSuiteBuilder extends Builder implements SimpleBuildStep {
     private String testSuiteName;
     private String testSuiteSysId;
     private String responseBodyFormat;
+    private Boolean withResults;
 
     @DataBoundConstructor
-    public RunTestSuiteBuilder(String credentialsId) {
+    public RunTestSuiteWithResultsBuilder(String credentialsId) {
         super();
         this.credentialsId = credentialsId;
     }
@@ -119,6 +124,7 @@ public class RunTestSuiteBuilder extends Builder implements SimpleBuildStep {
     public String getTestSuiteName() {
         return testSuiteName;
     }
+
     @DataBoundSetter
     public void setTestSuiteName(String testSuiteName) {
         this.testSuiteName = testSuiteName;
@@ -140,6 +146,15 @@ public class RunTestSuiteBuilder extends Builder implements SimpleBuildStep {
     @DataBoundSetter
     public void setResponseBodyFormat(String responseBodyFormat) {
         this.responseBodyFormat = responseBodyFormat;
+    }
+
+    public Boolean getWithResults() {
+        return withResults;
+    }
+
+    @DataBoundSetter
+    public void setWithResults(Boolean withResults) {
+        this.withResults = withResults;
     }
 
     @Override
@@ -189,7 +204,6 @@ public class RunTestSuiteBuilder extends Builder implements SimpleBuildStep {
         taskListener.getLogger().format("Call API: %s\nusing:\n - username: %s\n - password: %s\n", this.url, username, password.replaceAll(".", "*"));
 
         ServiceNowAPIClient restClient = new ServiceNowAPIClient(this.url, username, password);
-        restClient.acceptResponseType = AcceptResponseType.valueOf(this.responseBodyFormat);
 
         Result serviceNowResult = null;
         try {
@@ -210,7 +224,7 @@ public class RunTestSuiteBuilder extends Builder implements SimpleBuildStep {
 
             if(!ActionStatus.FAILED.getStatus().equals(serviceNowResult.getStatus())) {
                 if(!ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
-                    taskListener.getLogger().println("Checking progress...");
+                    taskListener.getLogger().println("Checking progress");
                     try {
                         serviceNowResult = checkProgress(restClient, taskListener.getLogger(), progressCheckInterval);
                     } catch(InterruptedException e) {
@@ -219,12 +233,18 @@ public class RunTestSuiteBuilder extends Builder implements SimpleBuildStep {
                         e.printStackTrace(taskListener.getLogger());
                     }
                     if(serviceNowResult != null && ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
-                        taskListener.getLogger().println(serviceNowResult.toString());
-                        taskListener.getLogger().println("Changes applied.");
+                        taskListener.getLogger().println("Test suite executed.");
                         result = true;
                     }
                 }
             }
+
+            if(Boolean.TRUE.equals(this.withResults)) {
+                final String testSuiteResultsId = serviceNowResult.getLinks().getResults() != null ?
+                        serviceNowResult.getLinks().getResults().getId() : StringUtils.EMPTY;
+                result &= performTestSuiteResults(taskListener, restClient, testSuiteResultsId);
+            }
+
         } else {
             taskListener.getLogger().println("Run test suite action failed. Check logs!");
         }
@@ -232,14 +252,39 @@ public class RunTestSuiteBuilder extends Builder implements SimpleBuildStep {
         return result;
     }
 
+    private boolean performTestSuiteResults(final TaskListener taskListener, final ServiceNowAPIClient restClient, final String resultsId) {
+        boolean result = false;
+
+        Result serviceNowResult = null;
+        try {
+            serviceNowResult = restClient.getTestSuiteResults(resultsId);
+        } catch(ServiceNowApiException ex) {
+            taskListener.getLogger().format("Error occurred when API 'GET /sn_cicd/testsuite/results/{result_id}' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
+        } catch(Exception ex) {
+            taskListener.getLogger().println(ex);
+        }
+
+        if(serviceNowResult != null) {
+            taskListener.getLogger().println("TEST SUITE results");
+            taskListener.getLogger().println(formatTestResults(serviceNowResult));
+
+            if(ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
+                result = true;
+            }
+        } else {
+            taskListener.getLogger().println("Test suite result action failed. Check logs!");
+        }
+
+        return result;
+    }
+
     private Result checkProgress(ServiceNowAPIClient restClient, PrintStream logger, int progressCheckInterval) throws InterruptedException {
         Result result = null;
-        logger.println("");
         do {
+            logger.print(".");
             result = restClient.checkProgress();
             if(result != null) {
                 final int progress = result.getPercentComplete();
-                logger.print("\rProgress: " + progress + "%");
                 if(progress != 100) {
                     Thread.sleep(progressCheckInterval);
                 }
@@ -251,7 +296,35 @@ public class RunTestSuiteBuilder extends Builder implements SimpleBuildStep {
         return result;
     }
 
-    @Symbol("runTestSuite")
+    private String formatTestResults(Result serviceNowResult) {
+        return MessageFormat.format(
+                "\tTest suite name:\t{0}\n" +
+                        "\tStatus:\t{1}\n" +
+                        "\tDuration:\t{2}\n" +
+                        "\tSuccessfully rolledup tests:\t{3}\n" +
+                        "\tFailed rolledup tests:\t{4}\n" +
+                        "\tSkipped rolledup tests:\t{5}\n" +
+                        "\tRolledup tests with error:\t{6}",
+                getValue(serviceNowResult, ResponseUnboundParameters.TestResults.name),
+                getValue(serviceNowResult, ResponseUnboundParameters.TestResults.status),
+                getValue(serviceNowResult, ResponseUnboundParameters.TestResults.duration),
+                getValue(serviceNowResult, ResponseUnboundParameters.TestResults.rolledupTestSuccessCount),
+                getValue(serviceNowResult, ResponseUnboundParameters.TestResults.rolledupTestFailureCount),
+                getValue(serviceNowResult, ResponseUnboundParameters.TestResults.rolledupTestSkipCount),
+                getValue(serviceNowResult, ResponseUnboundParameters.TestResults.rolledupTestErrorCount)
+        );
+    }
+
+    private Object getValue(final Result result, final String name) {
+        if(result.getUnboundAttributes() != null &&
+                result.getUnboundAttributes().size() > 0 &&
+                result.getUnboundAttributes().containsKey(name)) {
+            return result.getUnboundAttributes().get(name);
+        }
+        return StringUtils.EMPTY;
+    }
+
+    @Symbol("runTestSuiteWithResults")
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
@@ -273,15 +346,7 @@ public class RunTestSuiteBuilder extends Builder implements SimpleBuildStep {
 
         @Override
         public String getDisplayName() {
-            return Messages.RunTestSuiteBuilder_DescriptorImpl_DisplayName();
-        }
-
-        public ListBoxModel doFillResponseBodyFormatItems() {
-            ListBoxModel items = new ListBoxModel();
-            for (AcceptResponseType responseType : AcceptResponseType.values()) {
-                items.add(responseType.name(), responseType.name());
-            }
-            return items;
+            return Messages.RunTestSuiteWithResultsBuilder_DescriptorImpl_DisplayName();
         }
 
     }
