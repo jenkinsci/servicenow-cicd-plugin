@@ -64,8 +64,7 @@ public class ServiceNowAPIClient {
     }
 
     /**
-     *
-     * @param url URL of the ServiceNow API
+     * @param url      URL of the ServiceNow API
      * @param username User name used to authorize requests
      * @param password User password used for request authorization
      */
@@ -83,7 +82,7 @@ public class ServiceNowAPIClient {
             final String systemId,
             final String branchName) throws IOException {
         final String endpoint = "sc/apply_changes";
-        LOG.info("ServiceNow API call > applyChanges");
+        LOG.debug("ServiceNow API call > applyChanges");
 
         List<NameValuePair> params = new ArrayList<>();
         addParameter(params, RequestParameters.APP_SCOPE, applicationScope);
@@ -101,7 +100,7 @@ public class ServiceNowAPIClient {
             final String browserName,
             final String browserVersion) {
         final String endpoint = "testsuite/run";
-        LOG.info("ServiceNow API call > runTestSuite");
+        LOG.debug("ServiceNow API call > runTestSuite");
 
         List<NameValuePair> params = new ArrayList<>();
         addParameter(params, RequestParameters.TEST_SUITE_NAME, testSuiteName);
@@ -125,7 +124,7 @@ public class ServiceNowAPIClient {
 
     public Result getTestSuiteResults(String resultsId) {
         String endpoint = "testsuite/results/";
-        LOG.info("ServiceNow API call > runTestSuite");
+        LOG.debug("ServiceNow API call > runTestSuite");
 
         if(StringUtils.isBlank(resultsId)) {
             throw new ServiceNowApiException("Missing parameter 'results_id", "Parameter 'results_id is require when following API end-point is called " + endpoint);
@@ -136,10 +135,24 @@ public class ServiceNowAPIClient {
         return sendRequest(endpoint, null);
     }
 
+    public Result publishApp(String applicationScope, String applicationSysId, String applicationVersion, String devNotes) {
+        final String endpoint = "app_repo/publish";
+        LOG.debug("ServiceNow API call > publishApp");
+
+        List<NameValuePair> params = new ArrayList<>();
+        addParameter(params, RequestParameters.APP_SCOPE, applicationScope);
+        addParameter(params, RequestParameters.SYSTEM_ID, applicationSysId);
+        addParameter(params, RequestParameters.APP_VERSION, applicationVersion);
+        addParameter(params, RequestParameters.DEV_NOTES, devNotes);
+
+        return sendRequest(endpoint, params, null);
+    }
+
     /**
      * Send POST request using following parameters.
+     *
      * @param endpoint End-point path
-     * @param params Request parameters
+     * @param params   Request parameters
      * @param jsonBody Body of the request (as JSON object)
      * @return Result of the response or null if there was thrown an exception.
      */
@@ -151,8 +164,9 @@ public class ServiceNowAPIClient {
 
     /**
      * Send GET request.
+     *
      * @param endpoint End-point path
-     * @param params Request parameters
+     * @param params   Request parameters
      * @return Result of the response or null if there was thrown an exception.
      */
     private Result sendRequest(String endpoint, List<NameValuePair> params) {
@@ -226,7 +240,7 @@ public class ServiceNowAPIClient {
 
     private Response getResponse(HttpResponse response) throws IOException {
         String responseJSON = EntityUtils.toString(response.getEntity());
-        LOG.info(responseJSON);
+        LOG.debug(responseJSON);
         Response result = new ObjectMapper().readValue(responseJSON, Response.class);
         if(result.getError() != null) {
             Error error = result.getError();
@@ -250,7 +264,7 @@ public class ServiceNowAPIClient {
 
         if(jsonBody != null && request instanceof HttpPost) {
             final HttpEntity requestBody = new StringEntity(new ObjectMapper().writeValueAsString(jsonBody));
-            ((HttpPost)request).setEntity(requestBody);
+            ((HttpPost) request).setEntity(requestBody);
         }
 
         return client.execute(request);

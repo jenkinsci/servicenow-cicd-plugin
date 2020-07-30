@@ -3,7 +3,6 @@ package io.jenkins.plugins.servicenow;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
-import com.iwombat.util.StringUtil;
 import hudson.*;
 import hudson.model.AbstractProject;
 import hudson.model.Run;
@@ -11,11 +10,9 @@ import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
-import hudson.util.ListBoxModel;
 import io.jenkins.plugins.servicenow.api.ActionStatus;
 import io.jenkins.plugins.servicenow.api.ResponseUnboundParameters;
 import io.jenkins.plugins.servicenow.api.ServiceNowAPIClient;
-import io.jenkins.plugins.servicenow.api.ServiceNowAPIClient.AcceptResponseType;
 import io.jenkins.plugins.servicenow.api.ServiceNowApiException;
 import io.jenkins.plugins.servicenow.api.model.Result;
 import jenkins.tasks.SimpleBuildStep;
@@ -31,7 +28,6 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.text.MessageFormat;
-import java.util.Map;
 
 public class RunTestSuiteWithResultsBuilder extends Builder implements SimpleBuildStep {
 
@@ -333,7 +329,7 @@ public class RunTestSuiteWithResultsBuilder extends Builder implements SimpleBui
 
             final String regex = "^https?://.+";
             if(url.matches(regex)) {
-                return FormValidation.error(Messages.ApplyChangesBuilder_DescriptorImpl_errors_wrongUrl());
+                return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
             }
             return FormValidation.ok();
         }

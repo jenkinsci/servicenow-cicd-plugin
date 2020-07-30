@@ -260,7 +260,7 @@ public class RunTestSuiteBuilder extends Builder implements SimpleBuildStep {
 
             final String regex = "^https?://.+";
             if(url.matches(regex)) {
-                return FormValidation.error(Messages.ApplyChangesBuilder_DescriptorImpl_errors_wrongUrl());
+                return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
             }
             return FormValidation.ok();
         }

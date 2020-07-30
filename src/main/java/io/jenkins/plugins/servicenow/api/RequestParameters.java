@@ -3,7 +3,7 @@ package io.jenkins.plugins.servicenow.api;
 public interface RequestParameters {
 
     String API_VERSION = "api_version";
-    String APP_SCOPE = "app_scope";
+    String APP_SCOPE = "scope";
     String SYSTEM_ID = "app_sys_id";
     String BRANCH_NAME = "branch_name";
 
@@ -13,4 +13,7 @@ public interface RequestParameters {
     String OS_VERSION = "os_version";
     String BROWSER_NAME = "browser_name";
     String BROWSER_VERSION = "browser_version";
+
+    String APP_VERSION = "version";
+    String DEV_NOTES = "dev_notes";
 }
