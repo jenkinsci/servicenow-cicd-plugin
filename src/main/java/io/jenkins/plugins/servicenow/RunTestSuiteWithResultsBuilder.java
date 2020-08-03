@@ -17,6 +17,8 @@ import io.jenkins.plugins.servicenow.api.ServiceNowApiException;
 import io.jenkins.plugins.servicenow.api.model.Result;
 import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -29,16 +31,10 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.text.MessageFormat;
 
-public class RunTestSuiteWithResultsBuilder extends Builder implements SimpleBuildStep {
+public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
 
-    /**
-     * Interval in milliseconds between next progress check (ServiceNow API call).
-     */
-    private static final int CHECK_PROGRESS_INTERVAL = 5000;
+    private static final Logger LOG = LogManager.getLogger(RunTestSuiteWithResultsBuilder.class);
 
-    private String url;
-    private String credentialsId;
-    private String apiVersion;
     private String browserName;
     private String browserVersion;
     private String osName;
@@ -50,35 +46,7 @@ public class RunTestSuiteWithResultsBuilder extends Builder implements SimpleBui
 
     @DataBoundConstructor
     public RunTestSuiteWithResultsBuilder(String credentialsId) {
-        super();
-        this.credentialsId = credentialsId;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    @DataBoundSetter
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public String getCredentialsId() {
-        return credentialsId;
-    }
-
-    @DataBoundSetter
-    public void setCredentialsId(String credentialsId) {
-        this.credentialsId = credentialsId;
-    }
-
-    public String getApiVersion() {
-        return apiVersion;
-    }
-
-    @DataBoundSetter
-    public void setApiVersion(String apiVersion) {
-        this.apiVersion = apiVersion;
+        super(credentialsId);
     }
 
     public String getBrowserName() {
@@ -154,52 +122,12 @@ public class RunTestSuiteWithResultsBuilder extends Builder implements SimpleBui
     }
 
     @Override
-    public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher, @Nonnull TaskListener taskListener) throws InterruptedException, IOException {
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
-
-        setupBuilderParameters(run.getEnvironment(taskListener));
-
-        final StandardUsernamePasswordCredentials usernamePasswordCredentials =
-                CredentialsProvider.findCredentialById(this.getCredentialsId(), StandardUsernamePasswordCredentials.class, run, new DomainRequirement());
-        final int progressCheckInterval = Integer.parseInt(run.getEnvironment((taskListener)).get(BuildParameters.progressCheckInterval, String.valueOf(CHECK_PROGRESS_INTERVAL)));
-
-        boolean success = performRunTestSuite(taskListener, usernamePasswordCredentials.getUsername(), usernamePasswordCredentials.getPassword().getPlainText(), progressCheckInterval);
-
-        stopWatch.stop();
-        Long durationInMillis = stopWatch.getTotalTimeMillis();
-        long millis = durationInMillis % 1000;
-        long second = (durationInMillis / 1000) % 60;
-        long minute = (durationInMillis / (1000 * 60)) % 60;
-        long hour = (durationInMillis / (1000 * 60 * 60)) % 24;
-
-        String time = String.format("%02d:%02d:%02d.%d", hour, minute, second, millis);
-        taskListener.getLogger().println(String.format("Elapsed Time: %s ([%f] seconds)", time, stopWatch.getTotalTimeSeconds()));
-
-        if(!success) {
-            throw new AbortException("Build Failed");
-        }
-    }
-
-    private void setupBuilderParameters(EnvVars environment) throws IOException, InterruptedException {
-        if(StringUtils.isBlank(this.url)) {
-            this.url = environment.get(BuildParameters.instanceUrl);
-        }
-        if(StringUtils.isBlank(this.credentialsId)) {
-            this.credentialsId = environment.get(BuildParameters.credentials);
-        }
-
-        if(StringUtils.isBlank(this.apiVersion)) {
-            this.apiVersion = environment.get(BuildParameters.apiVersion);
-        }
-    }
-
-    private boolean performRunTestSuite(@Nonnull TaskListener taskListener, final String username, final String password, int progressCheckInterval) {
+    protected boolean perform(@Nonnull final TaskListener taskListener, final String username, final String password, final Integer progressCheckInterval) {
         boolean result = false;
 
-        taskListener.getLogger().format("Call API: %s\nusing:\n - username: %s\n - password: %s\n", this.url, username, password.replaceAll(".", "*"));
+        taskListener.getLogger().format("\nSTART: ServiceNow - Run test suite '%s' [%s]",this.getTestSuiteName(), this.getTestSuiteSysId());
 
-        ServiceNowAPIClient restClient = new ServiceNowAPIClient(this.url, username, password);
+        ServiceNowAPIClient restClient = new ServiceNowAPIClient(this.getUrl(), username, password);
 
         Result serviceNowResult = null;
         try {
@@ -210,17 +138,19 @@ public class RunTestSuiteWithResultsBuilder extends Builder implements SimpleBui
                     this.getBrowserName(),
                     this.getBrowserVersion());
         } catch(ServiceNowApiException ex) {
-            taskListener.getLogger().format("Error occurred when API with the action 'apply changes' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
+            taskListener.getLogger().format("Error occurred when API with the action 'run test suite' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
         } catch(Exception ex) {
             taskListener.getLogger().println(ex);
         }
 
         if(serviceNowResult != null) {
-            taskListener.getLogger().println(serviceNowResult.toString());
+            if(LOG.isDebugEnabled()) {
+                LOG.debug("Response from 'run test suite' call: " + serviceNowResult.toString());
+            }
 
             if(!ActionStatus.FAILED.getStatus().equals(serviceNowResult.getStatus())) {
                 if(!ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
-                    taskListener.getLogger().println("Checking progress");
+                    taskListener.getLogger().format("\nChecking progress");
                     try {
                         serviceNowResult = checkProgress(restClient, taskListener.getLogger(), progressCheckInterval);
                     } catch(InterruptedException e) {
@@ -228,24 +158,33 @@ public class RunTestSuiteWithResultsBuilder extends Builder implements SimpleBui
                         e.printStackTrace();
                         e.printStackTrace(taskListener.getLogger());
                     }
-                    if(serviceNowResult != null && ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
-                        taskListener.getLogger().println("Test suite executed.");
-                        result = true;
+                    if(serviceNowResult != null) {
+                        if(ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
+                            taskListener.getLogger().println("\nTest suite DONE.");
+                            result = true;
+
+                            result &= generateTestResult(taskListener, serviceNowResult, restClient);
+                        } else {
+                            taskListener.getLogger().println("\nTest suite DONE but failed: " + serviceNowResult.getStatusMessage());
+                            result = false;
+                        }
                     }
                 }
             }
-
-            if(Boolean.TRUE.equals(this.withResults)) {
-                final String testSuiteResultsId = serviceNowResult.getLinks().getResults() != null ?
-                        serviceNowResult.getLinks().getResults().getId() : StringUtils.EMPTY;
-                result &= performTestSuiteResults(taskListener, restClient, testSuiteResultsId);
-            }
-
         } else {
             taskListener.getLogger().println("Run test suite action failed. Check logs!");
         }
 
         return result;
+    }
+
+    private boolean generateTestResult(@Nonnull TaskListener taskListener, final Result serviceNowResult, ServiceNowAPIClient restClient) {
+        if(Boolean.TRUE.equals(this.withResults)) {
+            final String testSuiteResultsId = serviceNowResult.getLinks().getResults() != null ?
+                    serviceNowResult.getLinks().getResults().getId() : StringUtils.EMPTY;
+            return performTestSuiteResults(taskListener, restClient, testSuiteResultsId);
+        }
+        return true;
     }
 
     private boolean performTestSuiteResults(final TaskListener taskListener, final ServiceNowAPIClient restClient, final String resultsId) {
@@ -274,40 +213,24 @@ public class RunTestSuiteWithResultsBuilder extends Builder implements SimpleBui
         return result;
     }
 
-    private Result checkProgress(ServiceNowAPIClient restClient, PrintStream logger, int progressCheckInterval) throws InterruptedException {
-        Result result = null;
-        do {
-            logger.print(".");
-            result = restClient.checkProgress();
-            if(result != null) {
-                final int progress = result.getPercentComplete();
-                if(progress != 100) {
-                    Thread.sleep(progressCheckInterval);
-                }
-            }
-        } while(result != null &&
-                !ActionStatus.FAILED.getStatus().equals(result.getStatus()) &&
-                !ActionStatus.SUCCESSFUL.getStatus().equals(result.getStatus()));
-
-        return result;
-    }
-
     private String formatTestResults(Result serviceNowResult) {
         return MessageFormat.format(
                 "\tTest suite name:\t{0}\n" +
-                        "\tStatus:\t{1}\n" +
+                        "\tStatus:\t\t{1}\n" +
                         "\tDuration:\t{2}\n" +
                         "\tSuccessfully rolledup tests:\t{3}\n" +
                         "\tFailed rolledup tests:\t{4}\n" +
                         "\tSkipped rolledup tests:\t{5}\n" +
-                        "\tRolledup tests with error:\t{6}",
+                        "\tRolledup tests with error:\t{6}\n" +
+                        "\tLink to the result: {7}",
                 getValue(serviceNowResult, ResponseUnboundParameters.TestResults.name),
                 getValue(serviceNowResult, ResponseUnboundParameters.TestResults.status),
                 getValue(serviceNowResult, ResponseUnboundParameters.TestResults.duration),
                 getValue(serviceNowResult, ResponseUnboundParameters.TestResults.rolledupTestSuccessCount),
                 getValue(serviceNowResult, ResponseUnboundParameters.TestResults.rolledupTestFailureCount),
                 getValue(serviceNowResult, ResponseUnboundParameters.TestResults.rolledupTestSkipCount),
-                getValue(serviceNowResult, ResponseUnboundParameters.TestResults.rolledupTestErrorCount)
+                getValue(serviceNowResult, ResponseUnboundParameters.TestResults.rolledupTestErrorCount),
+                serviceNowResult.getLinks().getResults().getUrl()
         );
     }
 

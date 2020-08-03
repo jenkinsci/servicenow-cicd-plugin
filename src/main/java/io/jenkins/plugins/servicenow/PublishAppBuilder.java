@@ -19,6 +19,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
+import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
 import java.io.IOException;
 
@@ -73,7 +74,7 @@ public class PublishAppBuilder extends ProgressBuilder {
     }
 
     @Override
-    protected boolean perform(TaskListener taskListener, String username, String password, Integer progressCheckInterval) {
+    protected boolean perform(@Nonnull final TaskListener taskListener, final String username, final String password, final Integer progressCheckInterval) {
         boolean result = false;
 
         taskListener.getLogger().println("START: ServiceNow - Publish the specified application (version: " + this.getAppVersion() + ")");
@@ -115,7 +116,7 @@ public class PublishAppBuilder extends ProgressBuilder {
                     }
                 }
             } else { // serve result with the status FAILED
-                LOG.error("Publish app action replied with failure: " + serviceNowResult);
+                LOG.error("Publish app request replied with failure: " + serviceNowResult);
                 String errorDetail = this.buildErrorDetailFromFailedResponse(serviceNowResult);
                 taskListener.getLogger().println("Error occurred when publishing the application was requested: " + errorDetail);
             }

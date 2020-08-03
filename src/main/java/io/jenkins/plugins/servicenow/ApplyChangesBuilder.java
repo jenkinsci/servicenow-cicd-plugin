@@ -1,11 +1,8 @@
 package io.jenkins.plugins.servicenow;
 
-import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
-import hudson.*;
+import hudson.EnvVars;
+import hudson.Extension;
 import hudson.model.AbstractProject;
-import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
@@ -14,63 +11,29 @@ import io.jenkins.plugins.servicenow.api.ActionStatus;
 import io.jenkins.plugins.servicenow.api.ServiceNowAPIClient;
 import io.jenkins.plugins.servicenow.api.ServiceNowApiException;
 import io.jenkins.plugins.servicenow.api.model.Result;
-import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
-import org.springframework.util.StopWatch;
 
 import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
 import java.io.IOException;
-import java.io.PrintStream;
 
-public class ApplyChangesBuilder extends Builder implements SimpleBuildStep {
+public class ApplyChangesBuilder extends ProgressBuilder {
 
-    /**
-     * Interval in milliseconds between next progress check (ServiceNow API call).
-     */
-    private static final int CHECK_PROGRESS_INTERVAL = 5000;
+    private static final Logger LOG = LogManager.getLogger(ApplyChangesBuilder.class);
 
-    private String url;
-    private String credentialsId;
-    private String apiVersion;
     private String appScope;
     private String appSysId;
     private String branchName;
 
     @DataBoundConstructor
     public ApplyChangesBuilder(String credentialsId) {
-        super();
-        this.credentialsId = credentialsId;
-    }
-
-    public String getCredentialsId() {
-        return credentialsId;
-    }
-
-    public void setCredentialsId(String credentialsId) {
-        this.credentialsId = credentialsId;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    @DataBoundSetter
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public String getApiVersion() {
-        return apiVersion;
-    }
-
-    @DataBoundSetter
-    public void setApiVersion(String apiVersion) {
-        this.apiVersion = apiVersion;
+        super(credentialsId);
     }
 
     public String getAppScope() {
@@ -101,45 +64,8 @@ public class ApplyChangesBuilder extends Builder implements SimpleBuildStep {
     }
 
     @Override
-    public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher,
-            @Nonnull TaskListener taskListener) throws InterruptedException, IOException {
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
-
-        setupBuilderParameters(run.getEnvironment(taskListener));
-
-        final StandardUsernamePasswordCredentials usernamePasswordCredentials =
-                CredentialsProvider.findCredentialById(this.getCredentialsId(), StandardUsernamePasswordCredentials.class, run, new DomainRequirement());
-        final int progressCheckInterval = Integer.parseInt(run.getEnvironment((taskListener)).get(BuildParameters.progressCheckInterval, String.valueOf(CHECK_PROGRESS_INTERVAL)));
-
-        boolean success = performApplyChanges(taskListener, usernamePasswordCredentials.getUsername(), usernamePasswordCredentials.getPassword().getPlainText(), progressCheckInterval);
-
-        stopWatch.stop();
-        Long durationInMillis = stopWatch.getTotalTimeMillis();
-        long millis = durationInMillis % 1000;
-        long second = (durationInMillis / 1000) % 60;
-        long minute = (durationInMillis / (1000 * 60)) % 60;
-        long hour = (durationInMillis / (1000 * 60 * 60)) % 24;
-
-        String time = String.format("%02d:%02d:%02d.%d", hour, minute, second, millis);
-        taskListener.getLogger().println(String.format("Elapsed Time: %s ([%f] seconds)", time, stopWatch.getTotalTimeSeconds()));
-
-        if(!success) {
-            throw new AbortException("Build Failed");
-        }
-    }
-
-    private void setupBuilderParameters(EnvVars environment) throws IOException, InterruptedException {
-        if(StringUtils.isBlank(this.url)) {
-            this.url = environment.get(BuildParameters.instanceUrl);
-        }
-        if(StringUtils.isBlank(this.credentialsId)) {
-            this.credentialsId = environment.get(BuildParameters.credentials);
-        }
-
-        if(StringUtils.isBlank(this.apiVersion)) {
-            this.apiVersion = environment.get(BuildParameters.apiVersion);
-        }
+    protected void setupBuilderParameters(EnvVars environment) {
+        super.setupBuilderParameters(environment);
         if(StringUtils.isBlank(this.appScope)) {
             this.appScope = environment.get(BuildParameters.appScope);
         }
@@ -151,12 +77,13 @@ public class ApplyChangesBuilder extends Builder implements SimpleBuildStep {
         }
     }
 
-    private boolean performApplyChanges(@Nonnull TaskListener taskListener, final String username, final String password, int progressCheckInterval) {
+    @Override
+    protected boolean perform(@Nonnull TaskListener taskListener, final String username, final String password, final Integer progressCheckInterval) {
         boolean result = false;
 
-        taskListener.getLogger().format("Call API: %s\nusing:\n - username: %s\n - password: %s\n", this.url, username, password.replaceAll(".", "*"));
+        taskListener.getLogger().println("START: ServiceNow - Apply changes");
 
-        ServiceNowAPIClient restClient = new ServiceNowAPIClient(this.url, username, password);
+        ServiceNowAPIClient restClient = new ServiceNowAPIClient(this.getUrl(), username, password);
 
         Result serviceNowResult = null;
         try {
@@ -168,11 +95,13 @@ public class ApplyChangesBuilder extends Builder implements SimpleBuildStep {
         }
 
         if(serviceNowResult != null) {
-            taskListener.getLogger().println(serviceNowResult.toString());
+            if(LOG.isDebugEnabled()) {
+                LOG.debug("Response from 'apply changes' call: " + serviceNowResult.toString());
+            }
 
             if(!ActionStatus.FAILED.getStatus().equals(serviceNowResult.getStatus())) {
                 if(!ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
-                    taskListener.getLogger().println("Checking progress...");
+                    taskListener.getLogger().format("Checking progress");
                     try {
                         serviceNowResult = checkProgress(restClient, taskListener.getLogger(), progressCheckInterval);
                     } catch(InterruptedException e) {
@@ -184,31 +113,19 @@ public class ApplyChangesBuilder extends Builder implements SimpleBuildStep {
                         taskListener.getLogger().println(serviceNowResult.toString());
                         taskListener.getLogger().println("Changes applied.");
                         result = true;
+                    } else {
+                        taskListener.getLogger().println("\nAction DONE but failed: " + serviceNowResult.getStatusMessage());
+                        result = false;
                     }
                 }
+            } else { // serve result with the status FAILED
+                LOG.error("Apply changes request replied with failure: " + serviceNowResult);
+                String errorDetail = this.buildErrorDetailFromFailedResponse(serviceNowResult);
+                taskListener.getLogger().println("Error occurred when publishing the application was requested: " + errorDetail);
             }
         } else {
             taskListener.getLogger().println("Apply changes action failed. Check logs!");
         }
-
-        return result;
-    }
-
-    private Result checkProgress(ServiceNowAPIClient restClient, PrintStream logger, int progressCheckInterval) throws InterruptedException {
-        Result result = null;
-        logger.println("");
-        do {
-            result = restClient.checkProgress();
-            if(result != null) {
-                final int progress = result.getPercentComplete();
-                logger.print("\rProgress: " + progress + "%");
-                if(progress != 100) {
-                    Thread.sleep(progressCheckInterval);
-                }
-            }
-        } while(result != null &&
-                !ActionStatus.FAILED.getStatus().equals(result.getStatus()) &&
-                !ActionStatus.SUCCESSFUL.getStatus().equals(result.getStatus()));
 
         return result;
     }

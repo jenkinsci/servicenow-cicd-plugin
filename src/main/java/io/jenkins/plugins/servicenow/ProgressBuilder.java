@@ -90,7 +90,7 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
         }
     }
 
-    protected abstract boolean perform(TaskListener taskListener, String username, String password, Integer progressCheckInterval);
+    protected abstract boolean perform(@Nonnull final TaskListener taskListener, final String username, final String password, final Integer progressCheckInterval);
 
     protected void setupBuilderParameters(EnvVars environment) {
         if(StringUtils.isBlank(this.url)) {
