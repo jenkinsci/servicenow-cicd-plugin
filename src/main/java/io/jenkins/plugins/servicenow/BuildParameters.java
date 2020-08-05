@@ -12,4 +12,7 @@ public interface BuildParameters {
     String resultId = "result_id";
 
     String progressCheckInterval = "progressCheckInterval";
+
+    String publishedAppVersion = "publishedAppVersion";
+    String rollbackAppVersion = "rollbackAppVersion";
 }

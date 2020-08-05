@@ -135,7 +135,7 @@ public class ServiceNowAPIClient {
         return sendRequest(endpoint, null);
     }
 
-    public Result publishApp(String applicationScope, String applicationSysId, String applicationVersion, String devNotes) {
+    public Result publishApp(final String applicationScope, final String applicationSysId, final String applicationVersion, final String devNotes) {
         final String endpoint = "app_repo/publish";
         LOG.debug("ServiceNow API call > publishApp");
 
@@ -144,6 +144,31 @@ public class ServiceNowAPIClient {
         addParameter(params, RequestParameters.SYSTEM_ID, applicationSysId);
         addParameter(params, RequestParameters.APP_VERSION, applicationVersion);
         addParameter(params, RequestParameters.DEV_NOTES, devNotes);
+
+        return sendRequest(endpoint, params, null);
+    }
+
+
+    public Result installApp(final String applicationScope, final String applicationSysId, final String applicationVersion) {
+        final String endpoint = "app_repo/install";
+        LOG.debug("ServiceNow API call > installApp");
+
+        List<NameValuePair> params = new ArrayList<>();
+        addParameter(params, RequestParameters.APP_SCOPE, applicationScope);
+        addParameter(params, RequestParameters.SYSTEM_ID, applicationSysId);
+        addParameter(params, RequestParameters.APP_VERSION, applicationVersion);
+
+        return sendRequest(endpoint, params, null);
+    }
+
+    public Result rollbackApp(final String applicationScope, final String applicationSysId, final String rollbackVersion) {
+        final String endpoint = "app_repo/rollback";
+        LOG.debug("ServiceNow API call > rollbackApp");
+
+        List<NameValuePair> params = new ArrayList<>();
+        addParameter(params, RequestParameters.APP_SCOPE, applicationScope);
+        addParameter(params, RequestParameters.SYSTEM_ID, applicationSysId);
+        addParameter(params, RequestParameters.APP_VERSION, rollbackVersion);
 
         return sendRequest(endpoint, params, null);
     }
@@ -221,7 +246,7 @@ public class ServiceNowAPIClient {
         try(CloseableHttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(getCredentials()).build()) {
 
             HttpPost request = new HttpPost();
-            HttpResponse response = sendRequest(client, request, endpointPath, parameters, jsonBody); //client.execute(request);
+            HttpResponse response = sendRequest(client, request, endpointPath, parameters, jsonBody);
 
             final int responseStatusCode = response.getStatusLine().getStatusCode();
             if(responseStatusCode < 200 || responseStatusCode > 202) {

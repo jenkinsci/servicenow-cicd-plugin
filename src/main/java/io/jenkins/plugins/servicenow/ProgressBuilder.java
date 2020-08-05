@@ -7,8 +7,7 @@ import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.Run;
-import hudson.model.TaskListener;
+import hudson.model.*;
 import hudson.tasks.Builder;
 import io.jenkins.plugins.servicenow.api.ActionStatus;
 import io.jenkins.plugins.servicenow.api.ServiceNowAPIClient;
@@ -21,6 +20,8 @@ import org.springframework.util.StopWatch;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Collections;
+import java.util.List;
 
 public abstract class ProgressBuilder extends Builder implements SimpleBuildStep {
 
@@ -85,6 +86,11 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
         String time = String.format("%02d:%02d:%02d.%d", hour, minute, second, millis);
         taskListener.getLogger().println(String.format("Elapsed Time: %s ([%f] seconds)", time, stopWatch.getTotalTimeSeconds()));
 
+        //((AbstractBuild)run).getBuildVariables();
+        List<ParameterValue> buildVariablesForNextSteps = this.setupParametersAfterBuildStep();
+        ParametersAction newAction = run.getAction(ParametersAction.class).createUpdated(buildVariablesForNextSteps);
+        run.addOrReplaceAction(newAction);
+
         if(!success) {
             throw new AbortException("Build Failed");
         }
@@ -103,6 +109,11 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
         if(StringUtils.isBlank(this.apiVersion)) {
             this.apiVersion = environment.get(BuildParameters.apiVersion);
         }
+    }
+
+    protected List<ParameterValue> setupParametersAfterBuildStep() {
+        // nothing to do here
+        return Collections.emptyList();
     }
 
     protected Result checkProgress(ServiceNowAPIClient restClient, PrintStream logger, int progressCheckInterval) throws InterruptedException {
@@ -135,5 +146,20 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
             errorDetail.append(serviceNowResult.getError()).append(".");
         }
         return errorDetail.toString();
+    }
+
+    /**
+     * Get value from additional response attribute that was strictly not implemented by current structure of the response object.
+     * @param result Result returned by ServiceNow API and taken from the response object.
+     * @param name Name of the attribute that should occur in the response
+     * @return Value of the attribute
+     */
+    protected Object getValue(final Result result, final String name) {
+        if(result.getUnboundAttributes() != null &&
+                result.getUnboundAttributes().size() > 0 &&
+                result.getUnboundAttributes().containsKey(name)) {
+            return result.getUnboundAttributes().get(name);
+        }
+        return StringUtils.EMPTY;
     }
 }

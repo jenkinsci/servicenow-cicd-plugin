@@ -234,15 +234,6 @@ public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
         );
     }
 
-    private Object getValue(final Result result, final String name) {
-        if(result.getUnboundAttributes() != null &&
-                result.getUnboundAttributes().size() > 0 &&
-                result.getUnboundAttributes().containsKey(name)) {
-            return result.getUnboundAttributes().get(name);
-        }
-        return StringUtils.EMPTY;
-    }
-
     @Symbol("runTestSuiteWithResults")
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {

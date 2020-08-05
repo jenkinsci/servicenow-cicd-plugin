@@ -11,4 +11,6 @@ public interface ResponseUnboundParameters {
         String rolledupTestErrorCount = "rolledup_test_error_count";
         String rolledupTestSkipCount = "rolledup_test_skip_count";
     }
+
+    String  rollbackAppVersion = "rollback_version";
 }

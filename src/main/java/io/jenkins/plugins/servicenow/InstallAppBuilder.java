@@ -10,6 +10,7 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 import io.jenkins.plugins.servicenow.api.ActionStatus;
+import io.jenkins.plugins.servicenow.api.ResponseUnboundParameters;
 import io.jenkins.plugins.servicenow.api.ServiceNowAPIClient;
 import io.jenkins.plugins.servicenow.api.ServiceNowApiException;
 import io.jenkins.plugins.servicenow.api.model.Result;
@@ -25,22 +26,25 @@ import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
-public class PublishAppBuilder extends ProgressBuilder {
+public class InstallAppBuilder extends ProgressBuilder {
 
-    private static final Logger LOG = LogManager.getLogger(PublishAppBuilder.class);
+    private static final Logger LOG = LogManager.getLogger(InstallAppBuilder.class);
 
     private String appScope;
     private String appSysId;
     private String appVersion;
-    private String devNotes;
+    private String rollbackAppVersion;
 
-    private String calculatedAppVersion;
+    /**
+     * duplicated variable for <code>appVersion</code>, because in <code>appVersion</code> must stay original value
+     */
+    private String appVersionToInstall;
 
     @DataBoundConstructor
-    public PublishAppBuilder(final String credentialsId) {
+    public InstallAppBuilder(final String credentialsId) {
         super(credentialsId);
     }
 
@@ -71,39 +75,40 @@ public class PublishAppBuilder extends ProgressBuilder {
         this.appVersion = appVersion;
     }
 
-    public String getDevNotes() {
-        return devNotes;
-    }
-
-    @DataBoundSetter
-    public void setDevNotes(String devNotes) {
-        this.devNotes = devNotes;
-    }
-
     @Override
     protected boolean perform(@Nonnull final TaskListener taskListener, final String username, final String password, final Integer progressCheckInterval) {
         boolean result = false;
 
-        taskListener.getLogger().println("\nSTART: ServiceNow - Publish the specified application (version: " + this.calculatedAppVersion + ")");
+        taskListener.getLogger().println("\nSTART: ServiceNow - Install the specified application (version: " + Optional.ofNullable(this.appVersionToInstall).orElse("the latest") + ")");
+        if(StringUtils.isBlank(this.appVersionToInstall)) {
+            taskListener.getLogger().println("WARNING: Parameter '" + BuildParameters.publishedAppVersion + "' is empty.\n" +
+                    "Probably the build will fail! Following reason can be:\n" +
+                    "1) the step 'publish application' was not launched before,\n" +
+                    "2) Jenkins instance was not started with following option:\n" +
+                    "\t-Dhudson.model.ParametersAction.safeParameters="+BuildParameters.publishedAppVersion+","+BuildParameters.rollbackAppVersion+" or\n" +
+                    "\t-Dhudson.model.ParametersAction.keepUndefinedParameters=true\n" +
+                    "3) lack of additional String Parameter defined for the build with the name " + BuildParameters.publishedAppVersion);
+        }
 
         ServiceNowAPIClient restClient = new ServiceNowAPIClient(this.getUrl(), username, password);
 
         Result serviceNowResult = null;
         try {
-            serviceNowResult = restClient.publishApp(this.getAppScope(), this.getAppSysId(), this.calculatedAppVersion, this.getDevNotes());
+            serviceNowResult = restClient.installApp(this.getAppScope(), this.getAppSysId(), this.appVersionToInstall);
         } catch(ServiceNowApiException ex) {
-            taskListener.getLogger().format("Error occurred when API with the action 'publish application' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
+            taskListener.getLogger().format("Error occurred when API with the action 'install application' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
         } catch(Exception ex) {
             taskListener.getLogger().println(ex);
         }
 
         if(serviceNowResult != null) {
             if(LOG.isDebugEnabled()) {
-                LOG.debug("Response from 'publish app' call: " + serviceNowResult.toString());
+                LOG.debug("Response from 'install app' call: " + serviceNowResult.toString());
             }
 
             if(!ActionStatus.FAILED.getStatus().equals(serviceNowResult.getStatus())) {
                 if(!ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
+                    this.rollbackAppVersion = (String)getValue(serviceNowResult, ResponseUnboundParameters.rollbackAppVersion);
                     taskListener.getLogger().format("Checking progress");
                     try {
                         serviceNowResult = checkProgress(restClient, taskListener.getLogger(), progressCheckInterval);
@@ -114,21 +119,22 @@ public class PublishAppBuilder extends ProgressBuilder {
                     }
                     if(serviceNowResult != null) {
                         if(ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
-                            taskListener.getLogger().println("\nPublishing DONE.");
+                            taskListener.getLogger().println("\nApplication installed with rollback version " + this.rollbackAppVersion);
+                            taskListener.getLogger().println("Installation DONE.");
                             result = true;
                         } else {
-                            taskListener.getLogger().println("\nPublishing DONE but failed: " + serviceNowResult.getStatusMessage());
+                            taskListener.getLogger().println("\nInstallation DONE but failed: " + serviceNowResult.getStatusMessage());
                             result = false;
                         }
                     }
                 }
             } else { // serve result with the status FAILED
-                LOG.error("Publish app request replied with failure: " + serviceNowResult);
+                LOG.error("Install app request replied with failure: " + serviceNowResult);
                 String errorDetail = this.buildErrorDetailFromFailedResponse(serviceNowResult);
-                taskListener.getLogger().println("Error occurred when publishing the application was requested: " + errorDetail);
+                taskListener.getLogger().println("Error occurred when installation of the application was requested: " + errorDetail);
             }
         } else {
-            taskListener.getLogger().println("Publish app action failed. Check logs!");
+            taskListener.getLogger().println("Install app action failed. Check logs!");
         }
 
         return result;
@@ -144,25 +150,23 @@ public class PublishAppBuilder extends ProgressBuilder {
             this.appSysId = environment.get(BuildParameters.appSysId);
         }
         if(StringUtils.isBlank(this.appVersion)) {
-            this.calculatedAppVersion = "1.0." + environment.get("BUILD_NUMBER");
-        } else if(this.appVersion.split("\\.").length == 2) {
-            this.calculatedAppVersion = this.appVersion + "." + environment.get("BUILD_NUMBER");
+            this.appVersionToInstall = environment.get(BuildParameters.publishedAppVersion);
         } else {
-            this.calculatedAppVersion = this.appVersion;
+            this.appVersionToInstall = appVersion;
         }
     }
 
     @Override
     protected List<ParameterValue> setupParametersAfterBuildStep() {
         List<ParameterValue> parameters = new ArrayList<>();
-        if(StringUtils.isNotBlank(this.calculatedAppVersion)) {
-            parameters.add(new StringParameterValue(BuildParameters.publishedAppVersion, this.calculatedAppVersion));
-            LOG.info("Store following published version to be installed: " + this.calculatedAppVersion);
+        if(StringUtils.isNotBlank(this.rollbackAppVersion)) {
+            parameters.add(new StringParameterValue(BuildParameters.rollbackAppVersion, this.rollbackAppVersion));
+            LOG.info("Store following rollback version in case of tests failure: " + this.rollbackAppVersion);
         }
         return parameters;
     }
 
-    @Symbol("publishApp")
+    @Symbol("installApp")
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
@@ -184,7 +188,7 @@ public class PublishAppBuilder extends ProgressBuilder {
 
         @Override
         public String getDisplayName() {
-            return Messages.PublishAppBuilder_DescriptorImpl_DisplayName();
+            return Messages.InstallAppBuilder_DescriptorImpl_DisplayName();
         }
 
     }

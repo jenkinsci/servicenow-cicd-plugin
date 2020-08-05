@@ -3,8 +3,6 @@ package io.jenkins.plugins.servicenow;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.model.AbstractProject;
-import hudson.model.ParameterValue;
-import hudson.model.StringParameterValue;
 import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
@@ -24,23 +22,17 @@ import org.kohsuke.stapler.QueryParameter;
 import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
-public class PublishAppBuilder extends ProgressBuilder {
+public class RollbackAppBuilder extends ProgressBuilder {
 
-    private static final Logger LOG = LogManager.getLogger(PublishAppBuilder.class);
+    private static final Logger LOG = LogManager.getLogger(RollbackAppBuilder.class);
 
     private String appScope;
     private String appSysId;
-    private String appVersion;
-    private String devNotes;
-
-    private String calculatedAppVersion;
+    private String rollbackAppVersion;
 
     @DataBoundConstructor
-    public PublishAppBuilder(final String credentialsId) {
+    public RollbackAppBuilder(final String credentialsId) {
         super(credentialsId);
     }
 
@@ -62,49 +54,47 @@ public class PublishAppBuilder extends ProgressBuilder {
         this.appSysId = appSysId;
     }
 
-    public String getAppVersion() {
-        return appVersion;
+    public String getRollbackAppVersion() {
+        return rollbackAppVersion;
     }
 
     @DataBoundSetter
-    public void setAppVersion(String appVersion) {
-        this.appVersion = appVersion;
-    }
-
-    public String getDevNotes() {
-        return devNotes;
-    }
-
-    @DataBoundSetter
-    public void setDevNotes(String devNotes) {
-        this.devNotes = devNotes;
+    public void setRollbackAppVersion(String rollbackAppVersion) {
+        this.rollbackAppVersion = rollbackAppVersion;
     }
 
     @Override
     protected boolean perform(@Nonnull final TaskListener taskListener, final String username, final String password, final Integer progressCheckInterval) {
         boolean result = false;
 
-        taskListener.getLogger().println("\nSTART: ServiceNow - Publish the specified application (version: " + this.calculatedAppVersion + ")");
+        taskListener.getLogger().println("\nSTART: ServiceNow - Rollback the specified application (downgrade version: " + this.rollbackAppVersion + ")");
+        if(StringUtils.isBlank(this.rollbackAppVersion)) {
+            taskListener.getLogger().println("WARNING: Parameter '" + BuildParameters.rollbackAppVersion + "' is empty.\n" +
+                    "Probably the build will fail! Following reason can be:\n" +
+                    "1) the step 'install application' was not launched before,\n" +
+                    "2) Jenkins instance was not started with following option:\n" +
+                    "\t-Dhudson.model.ParametersAction.safeParameters="+BuildParameters.publishedAppVersion+","+BuildParameters.rollbackAppVersion+" or\n" +
+                    "\t-Dhudson.model.ParametersAction.keepUndefinedParameters=true\n" +
+                    "3) lack of additional String Parameter defined for the build with the name " + BuildParameters.rollbackAppVersion + ",\n" +
+                    "4) lack of the plugin parameterized-trigger to let trigger new builds and send parameters for new build.");
+        }
 
         ServiceNowAPIClient restClient = new ServiceNowAPIClient(this.getUrl(), username, password);
 
         Result serviceNowResult = null;
         try {
-            serviceNowResult = restClient.publishApp(this.getAppScope(), this.getAppSysId(), this.calculatedAppVersion, this.getDevNotes());
+            serviceNowResult = restClient.rollbackApp(this.getAppScope(), this.getAppSysId(), this.getRollbackAppVersion());
         } catch(ServiceNowApiException ex) {
-            taskListener.getLogger().format("Error occurred when API with the action 'publish application' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
+            taskListener.getLogger().format("Error occurred when API with the action 'rollback application' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
         } catch(Exception ex) {
             taskListener.getLogger().println(ex);
         }
 
         if(serviceNowResult != null) {
-            if(LOG.isDebugEnabled()) {
-                LOG.debug("Response from 'publish app' call: " + serviceNowResult.toString());
-            }
 
             if(!ActionStatus.FAILED.getStatus().equals(serviceNowResult.getStatus())) {
                 if(!ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
-                    taskListener.getLogger().format("Checking progress");
+                    taskListener.getLogger().format("\nChecking progress");
                     try {
                         serviceNowResult = checkProgress(restClient, taskListener.getLogger(), progressCheckInterval);
                     } catch(InterruptedException e) {
@@ -114,21 +104,21 @@ public class PublishAppBuilder extends ProgressBuilder {
                     }
                     if(serviceNowResult != null) {
                         if(ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
-                            taskListener.getLogger().println("\nPublishing DONE.");
+                            taskListener.getLogger().println("\nApplication rollback DONE.");
                             result = true;
                         } else {
-                            taskListener.getLogger().println("\nPublishing DONE but failed: " + serviceNowResult.getStatusMessage());
+                            taskListener.getLogger().println("\nApplication rollback DONE but failed: " + serviceNowResult.getStatusMessage());
                             result = false;
                         }
                     }
                 }
             } else { // serve result with the status FAILED
-                LOG.error("Publish app request replied with failure: " + serviceNowResult);
+                LOG.error("Rollback app request replied with failure: " + serviceNowResult);
                 String errorDetail = this.buildErrorDetailFromFailedResponse(serviceNowResult);
-                taskListener.getLogger().println("Error occurred when publishing the application was requested: " + errorDetail);
+                taskListener.getLogger().println("Error occurred when rollback of the application was requested: " + errorDetail);
             }
         } else {
-            taskListener.getLogger().println("Publish app action failed. Check logs!");
+            taskListener.getLogger().println("Rollback app action failed. Check logs!");
         }
 
         return result;
@@ -143,26 +133,12 @@ public class PublishAppBuilder extends ProgressBuilder {
         if(StringUtils.isBlank(this.appSysId)) {
             this.appSysId = environment.get(BuildParameters.appSysId);
         }
-        if(StringUtils.isBlank(this.appVersion)) {
-            this.calculatedAppVersion = "1.0." + environment.get("BUILD_NUMBER");
-        } else if(this.appVersion.split("\\.").length == 2) {
-            this.calculatedAppVersion = this.appVersion + "." + environment.get("BUILD_NUMBER");
-        } else {
-            this.calculatedAppVersion = this.appVersion;
+        if(StringUtils.isBlank(this.rollbackAppVersion)) {
+            this.rollbackAppVersion = environment.get(BuildParameters.rollbackAppVersion);
         }
     }
 
-    @Override
-    protected List<ParameterValue> setupParametersAfterBuildStep() {
-        List<ParameterValue> parameters = new ArrayList<>();
-        if(StringUtils.isNotBlank(this.calculatedAppVersion)) {
-            parameters.add(new StringParameterValue(BuildParameters.publishedAppVersion, this.calculatedAppVersion));
-            LOG.info("Store following published version to be installed: " + this.calculatedAppVersion);
-        }
-        return parameters;
-    }
-
-    @Symbol("publishApp")
+    @Symbol("rollbackApp")
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
@@ -184,7 +160,7 @@ public class PublishAppBuilder extends ProgressBuilder {
 
         @Override
         public String getDisplayName() {
-            return Messages.PublishAppBuilder_DescriptorImpl_DisplayName();
+            return Messages.RollbackAppBuilder_DescriptorImpl_DisplayName();
         }
 
     }
