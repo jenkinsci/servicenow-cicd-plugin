@@ -173,6 +173,20 @@ public class ServiceNowAPIClient {
         return sendRequest(endpoint, params, null);
     }
 
+    public Result activatePlugin(String pluginId) {
+        final String endpoint = "plugin/"+pluginId+"/activate";
+        LOG.debug("ServiceNow API call > activatePlugin");
+
+        return sendRequest(endpoint, null, null);
+    }
+
+    public Result rollbackPlugin(String pluginId) {
+        final String endpoint = "plugin/"+pluginId+"/rollback";
+        LOG.debug("ServiceNow API call > rollbackPlugin");
+
+        return sendRequest(endpoint, null, null);
+    }
+
     /**
      * Send POST request using following parameters.
      *

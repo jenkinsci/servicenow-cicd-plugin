@@ -1,0 +1,125 @@
+package io.jenkins.plugins.servicenow;
+
+import hudson.Extension;
+import hudson.model.AbstractProject;
+import hudson.model.TaskListener;
+import hudson.tasks.BuildStepDescriptor;
+import hudson.tasks.Builder;
+import hudson.util.FormValidation;
+import io.jenkins.plugins.servicenow.api.ActionStatus;
+import io.jenkins.plugins.servicenow.api.ServiceNowAPIClient;
+import io.jenkins.plugins.servicenow.api.ServiceNowApiException;
+import io.jenkins.plugins.servicenow.api.model.Result;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.jenkinsci.Symbol;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.QueryParameter;
+
+import javax.annotation.Nonnull;
+import javax.servlet.ServletException;
+import java.io.IOException;
+
+public class RollbackPluginBuilder extends ProgressBuilder {
+
+    private static final Logger LOG = LogManager.getLogger(RollbackPluginBuilder.class);
+
+    private String pluginId;
+
+    @DataBoundConstructor
+    public RollbackPluginBuilder(final String credentialsId) {
+        super(credentialsId);
+    }
+
+    public String getPluginId() {
+        return pluginId;
+    }
+
+    @DataBoundSetter
+    public void setPluginId(String pluginId) {
+        this.pluginId = pluginId;
+    }
+
+    @Override
+    protected boolean perform(@Nonnull final TaskListener taskListener, final String username, final String password, final Integer progressCheckInterval) {
+        boolean result = false;
+
+        taskListener.getLogger().println("\nSTART: ServiceNow - Roll back the plugin " + this.pluginId);
+
+        ServiceNowAPIClient restClient = new ServiceNowAPIClient(this.getUrl(), username, password);
+
+        Result serviceNowResult = null;
+        try {
+            serviceNowResult = restClient.rollbackPlugin(this.getPluginId());
+        } catch(ServiceNowApiException ex) {
+            taskListener.getLogger().format("Error occurred when API with the action 'rollback plugin' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
+        } catch(Exception ex) {
+            taskListener.getLogger().println(ex);
+        }
+
+        if(serviceNowResult != null) {
+
+            if(!ActionStatus.FAILED.getStatus().equals(serviceNowResult.getStatus())) {
+                if(!ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
+                    taskListener.getLogger().format("\nChecking progress");
+                    try {
+                        serviceNowResult = checkProgress(restClient, taskListener.getLogger(), progressCheckInterval);
+                    } catch(InterruptedException e) {
+                        serviceNowResult = null;
+                        e.printStackTrace();
+                        e.printStackTrace(taskListener.getLogger());
+                    }
+                    if(serviceNowResult != null) {
+                        if(ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
+                            taskListener.getLogger().println("\nPlugin roll-back DONE.");
+                            result = true;
+                        } else {
+                            taskListener.getLogger().println("\nPlugin roll-back DONE but failed: " + serviceNowResult.getStatusMessage());
+                            result = false;
+                        }
+                    }
+                }
+            } else { // serve result with the status FAILED
+                LOG.error("Rolling back the plugin request replied with failure: " + serviceNowResult);
+                String errorDetail = this.buildErrorDetailFromFailedResponse(serviceNowResult);
+                taskListener.getLogger().println("Error occurred when rolling back of the plugin was requested: " + errorDetail);
+            }
+        } else {
+            taskListener.getLogger().println("Rollback plugin action failed. Check logs!");
+        }
+
+        return result;
+    }
+
+    @Symbol("rollbackPlugin")
+    @Extension
+    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
+
+        public FormValidation doCheckName(@QueryParameter("url") String url, @QueryParameter("pluginId") String pluginId)
+                throws IOException, ServletException {
+
+            final String regex = "^https?://.+";
+            if(url.matches(regex)) {
+                return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
+            }
+            if(StringUtils.isBlank(pluginId)) {
+                return FormValidation.error(Messages.ActivatePluginBuilder_DescriptorImpl_errors_emptyPluginId());
+            }
+            return FormValidation.ok();
+        }
+
+        @Override
+        public boolean isApplicable(Class<? extends AbstractProject> aClass) {
+            return true;
+        }
+
+
+        @Override
+        public String getDisplayName() {
+            return Messages.RollbackPluginBuilder_DescriptorImpl_DisplayName();
+        }
+
+    }
+}

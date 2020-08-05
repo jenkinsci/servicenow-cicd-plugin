@@ -23,73 +23,39 @@ import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
 import java.io.IOException;
 
-public class ApplyChangesBuilder extends ProgressBuilder {
+public class ActivatePluginBuilder extends ProgressBuilder {
 
-    private static final Logger LOG = LogManager.getLogger(ApplyChangesBuilder.class);
+    private static final Logger LOG = LogManager.getLogger(ActivatePluginBuilder.class);
 
-    private String appScope;
-    private String appSysId;
-    private String branchName;
+    private String pluginId;
 
     @DataBoundConstructor
-    public ApplyChangesBuilder(String credentialsId) {
+    public ActivatePluginBuilder(final String credentialsId) {
         super(credentialsId);
     }
 
-    public String getAppScope() {
-        return appScope;
+    public String getPluginId() {
+        return pluginId;
     }
 
     @DataBoundSetter
-    public void setAppScope(String appScope) {
-        this.appScope = appScope;
-    }
-
-    public String getAppSysId() {
-        return appSysId;
-    }
-
-    @DataBoundSetter
-    public void setAppSysId(String appSysId) {
-        this.appSysId = appSysId;
-    }
-
-    public String getBranchName() {
-        return branchName;
-    }
-
-    @DataBoundSetter
-    public void setBranchName(String branchName) {
-        this.branchName = branchName;
+    public void setPluginId(String pluginId) {
+        this.pluginId = pluginId;
     }
 
     @Override
-    protected void setupBuilderParameters(EnvVars environment) {
-        super.setupBuilderParameters(environment);
-        if(StringUtils.isBlank(this.appScope)) {
-            this.appScope = environment.get(BuildParameters.appScope);
-        }
-        if(StringUtils.isBlank(this.appSysId)) {
-            this.appSysId = environment.get(BuildParameters.appSysId);
-        }
-        if(StringUtils.isBlank(this.branchName)) {
-            this.branchName = environment.get(BuildParameters.branchName);
-        }
-    }
-
-    @Override
-    protected boolean perform(@Nonnull TaskListener taskListener, final String username, final String password, final Integer progressCheckInterval) {
+    protected boolean perform(@Nonnull final TaskListener taskListener, final String username, final String password, final Integer progressCheckInterval) {
         boolean result = false;
 
-        taskListener.getLogger().println("START: ServiceNow - Apply changes");
+        taskListener.getLogger().println("\nSTART: ServiceNow - Activate the plugin " + this.pluginId);
 
         ServiceNowAPIClient restClient = new ServiceNowAPIClient(this.getUrl(), username, password);
 
         Result serviceNowResult = null;
         try {
-            serviceNowResult = restClient.applyChanges(this.getAppScope(), this.getAppSysId(), this.getBranchName());
+            serviceNowResult = restClient.activatePlugin(this.getPluginId());
         } catch(ServiceNowApiException ex) {
-            taskListener.getLogger().format("Error occurred when API with the action 'apply changes' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
+            taskListener.getLogger().format("Error occurred when API with the action 'activate plugin' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
         } catch(Exception ex) {
             taskListener.getLogger().println(ex);
         }
@@ -106,37 +72,41 @@ public class ApplyChangesBuilder extends ProgressBuilder {
                         e.printStackTrace();
                         e.printStackTrace(taskListener.getLogger());
                     }
-                    if(serviceNowResult != null && ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
-                        taskListener.getLogger().println(serviceNowResult.toString());
-                        taskListener.getLogger().println("\nChanges applied.");
-                        result = true;
-                    } else {
-                        taskListener.getLogger().println("\nAction DONE but failed: " + serviceNowResult.getStatusMessage());
-                        result = false;
+                    if(serviceNowResult != null) {
+                        if(ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
+                            taskListener.getLogger().println("\nPlugin activation DONE.");
+                            result = true;
+                        } else {
+                            taskListener.getLogger().println("\nPlugin activation DONE but failed: " + serviceNowResult.getStatusMessage());
+                            result = false;
+                        }
                     }
                 }
             } else { // serve result with the status FAILED
-                LOG.error("Apply changes request replied with failure: " + serviceNowResult);
+                LOG.error("Activate plugin request replied with failure: " + serviceNowResult);
                 String errorDetail = this.buildErrorDetailFromFailedResponse(serviceNowResult);
-                taskListener.getLogger().println("Error occurred when publishing the application was requested: " + errorDetail);
+                taskListener.getLogger().println("Error occurred when activation of the plugin was requested: " + errorDetail);
             }
         } else {
-            taskListener.getLogger().println("Apply changes action failed. Check logs!");
+            taskListener.getLogger().println("Activate plugin action failed. Check logs!");
         }
 
         return result;
     }
 
-    @Symbol("applyChanges")
+    @Symbol("activatePlugin")
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
-        public FormValidation doCheckName(@QueryParameter String url)
+        public FormValidation doCheckName(@QueryParameter("url") String url, @QueryParameter("pluginId") String pluginId)
                 throws IOException, ServletException {
 
             final String regex = "^https?://.+";
             if(url.matches(regex)) {
                 return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
+            }
+            if(StringUtils.isBlank(pluginId)) {
+                return FormValidation.error(Messages.ActivatePluginBuilder_DescriptorImpl_errors_emptyPluginId());
             }
             return FormValidation.ok();
         }
@@ -149,7 +119,7 @@ public class ApplyChangesBuilder extends ProgressBuilder {
 
         @Override
         public String getDisplayName() {
-            return Messages.ApplyChangesBuilder_DescriptorImpl_DisplayName();
+            return Messages.ActivatePluginBuilder_DescriptorImpl_DisplayName();
         }
 
     }
