@@ -80,7 +80,7 @@ public class ServiceNowAPIClient {
     public Result applyChanges(
             final String applicationScope,
             final String systemId,
-            final String branchName) throws IOException {
+            final String branchName) throws IOException, URISyntaxException {
         final String endpoint = "sc/apply_changes";
         LOG.debug("ServiceNow API call > applyChanges");
 
@@ -98,7 +98,7 @@ public class ServiceNowAPIClient {
             final String osName,
             final String osVersion,
             final String browserName,
-            final String browserVersion) {
+            final String browserVersion) throws IOException, URISyntaxException {
         final String endpoint = "testsuite/run";
         LOG.debug("ServiceNow API call > runTestSuite");
 
@@ -135,7 +135,7 @@ public class ServiceNowAPIClient {
         return sendRequest(endpoint, null);
     }
 
-    public Result publishApp(final String applicationScope, final String applicationSysId, final String applicationVersion, final String devNotes) {
+    public Result publishApp(final String applicationScope, final String applicationSysId, final String applicationVersion, final String devNotes) throws IOException, URISyntaxException {
         final String endpoint = "app_repo/publish";
         LOG.debug("ServiceNow API call > publishApp");
 
@@ -149,7 +149,7 @@ public class ServiceNowAPIClient {
     }
 
 
-    public Result installApp(final String applicationScope, final String applicationSysId, final String applicationVersion) {
+    public Result installApp(final String applicationScope, final String applicationSysId, final String applicationVersion) throws IOException, URISyntaxException {
         final String endpoint = "app_repo/install";
         LOG.debug("ServiceNow API call > installApp");
 
@@ -161,7 +161,7 @@ public class ServiceNowAPIClient {
         return sendRequest(endpoint, params, null);
     }
 
-    public Result rollbackApp(final String applicationScope, final String applicationSysId, final String rollbackVersion) {
+    public Result rollbackApp(final String applicationScope, final String applicationSysId, final String rollbackVersion) throws IOException, URISyntaxException {
         final String endpoint = "app_repo/rollback";
         LOG.debug("ServiceNow API call > rollbackApp");
 
@@ -173,14 +173,14 @@ public class ServiceNowAPIClient {
         return sendRequest(endpoint, params, null);
     }
 
-    public Result activatePlugin(String pluginId) {
+    public Result activatePlugin(String pluginId) throws IOException, URISyntaxException {
         final String endpoint = "plugin/"+pluginId+"/activate";
         LOG.debug("ServiceNow API call > activatePlugin");
 
         return sendRequest(endpoint, null, null);
     }
 
-    public Result rollbackPlugin(String pluginId) {
+    public Result rollbackPlugin(String pluginId) throws IOException, URISyntaxException {
         final String endpoint = "plugin/"+pluginId+"/rollback";
         LOG.debug("ServiceNow API call > rollbackPlugin");
 
@@ -195,7 +195,7 @@ public class ServiceNowAPIClient {
      * @param jsonBody Body of the request (as JSON object)
      * @return Result of the response or null if there was thrown an exception.
      */
-    private Result sendRequest(String endpoint, List<NameValuePair> params, JsonData jsonBody) {
+    private Result sendRequest(String endpoint, List<NameValuePair> params, JsonData jsonBody) throws IOException, URISyntaxException {
         Response response = this.post(endpoint, params, jsonBody);
 
         return getResult(endpoint, response);
@@ -255,7 +255,7 @@ public class ServiceNowAPIClient {
         return null;
     }
 
-    private Response post(final String endpointPath, final List<NameValuePair> parameters, final JsonData jsonBody) {
+    private Response post(final String endpointPath, final List<NameValuePair> parameters, final JsonData jsonBody) throws URISyntaxException, IOException {
         this.lastActionProgressUrl = StringUtils.EMPTY;
         try(CloseableHttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(getCredentials()).build()) {
 
@@ -270,11 +270,11 @@ public class ServiceNowAPIClient {
             return getResponse(response);
         } catch(URISyntaxException ex) {
             LOG.error("Wrong URL: " + ex.getMessage());
+            throw ex;
         } catch(IOException ex) {
-            ex.printStackTrace();
+            LOG.error(ex);
+            throw ex;
         }
-
-        return null;
     }
 
     private Response getResponse(HttpResponse response) throws IOException {

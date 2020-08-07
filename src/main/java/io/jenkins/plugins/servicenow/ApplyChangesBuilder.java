@@ -22,6 +22,7 @@ import org.kohsuke.stapler.QueryParameter;
 import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.net.UnknownHostException;
 
 public class ApplyChangesBuilder extends ProgressBuilder {
 
@@ -81,7 +82,7 @@ public class ApplyChangesBuilder extends ProgressBuilder {
     protected boolean perform(@Nonnull TaskListener taskListener, final String username, final String password, final Integer progressCheckInterval) {
         boolean result = false;
 
-        taskListener.getLogger().println("START: ServiceNow - Apply changes");
+        taskListener.getLogger().println("\nSTART: ServiceNow - Apply changes");
 
         ServiceNowAPIClient restClient = new ServiceNowAPIClient(this.getUrl(), username, password);
 
@@ -90,15 +91,17 @@ public class ApplyChangesBuilder extends ProgressBuilder {
             serviceNowResult = restClient.applyChanges(this.getAppScope(), this.getAppSysId(), this.getBranchName());
         } catch(ServiceNowApiException ex) {
             taskListener.getLogger().format("Error occurred when API with the action 'apply changes' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
+        }  catch (UnknownHostException ex) {
+            taskListener.getLogger().println("Check connection: " + ex.getMessage());
         } catch(Exception ex) {
-            taskListener.getLogger().println(ex);
+            taskListener.getLogger().println(ex.getMessage());
         }
 
         if(serviceNowResult != null) {
 
             if(!ActionStatus.FAILED.getStatus().equals(serviceNowResult.getStatus())) {
                 if(!ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
-                    taskListener.getLogger().format("\nChecking progress");
+                    taskListener.getLogger().format("Checking progress");
                     try {
                         serviceNowResult = checkProgress(restClient, taskListener.getLogger(), progressCheckInterval);
                     } catch(InterruptedException e) {
@@ -107,7 +110,7 @@ public class ApplyChangesBuilder extends ProgressBuilder {
                         e.printStackTrace(taskListener.getLogger());
                     }
                     if(serviceNowResult != null && ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
-                        taskListener.getLogger().println(serviceNowResult.toString());
+                        //taskListener.getLogger().println(serviceNowResult.toString());
                         taskListener.getLogger().println("\nChanges applied.");
                         result = true;
                     } else {

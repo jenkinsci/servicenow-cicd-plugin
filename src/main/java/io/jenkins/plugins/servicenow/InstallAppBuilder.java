@@ -25,6 +25,7 @@ import org.kohsuke.stapler.QueryParameter;
 import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -97,8 +98,10 @@ public class InstallAppBuilder extends ProgressBuilder {
             serviceNowResult = restClient.installApp(this.getAppScope(), this.getAppSysId(), this.appVersionToInstall);
         } catch(ServiceNowApiException ex) {
             taskListener.getLogger().format("Error occurred when API with the action 'install application' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
+        }  catch (UnknownHostException ex) {
+            taskListener.getLogger().println("Check connection: " + ex.getMessage());
         } catch(Exception ex) {
-            taskListener.getLogger().println(ex);
+            taskListener.getLogger().println(ex.getMessage());
         }
 
         if(serviceNowResult != null) {

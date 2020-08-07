@@ -22,6 +22,7 @@ import org.kohsuke.stapler.QueryParameter;
 import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.net.UnknownHostException;
 
 public class RollbackAppBuilder extends ProgressBuilder {
 
@@ -73,7 +74,7 @@ public class RollbackAppBuilder extends ProgressBuilder {
                     "Probably the build will fail! Following reason can be:\n" +
                     "1) the step 'install application' was not launched before,\n" +
                     "2) Jenkins instance was not started with following option:\n" +
-                    "\t-Dhudson.model.ParametersAction.safeParameters="+BuildParameters.publishedAppVersion+","+BuildParameters.rollbackAppVersion+" or\n" +
+                    "\t-Dhudson.model.ParametersAction.safeParameters=" + BuildParameters.publishedAppVersion + "," + BuildParameters.rollbackAppVersion + " or\n" +
                     "\t-Dhudson.model.ParametersAction.keepUndefinedParameters=true\n" +
                     "3) lack of additional String Parameter defined for the build with the name " + BuildParameters.rollbackAppVersion + ",\n" +
                     "4) lack of the plugin parameterized-trigger to let trigger new builds and send parameters for new build.");
@@ -86,15 +87,17 @@ public class RollbackAppBuilder extends ProgressBuilder {
             serviceNowResult = restClient.rollbackApp(this.getAppScope(), this.getAppSysId(), this.getRollbackAppVersion());
         } catch(ServiceNowApiException ex) {
             taskListener.getLogger().format("Error occurred when API with the action 'rollback application' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
+        }  catch (UnknownHostException ex) {
+            taskListener.getLogger().println("Check connection: " + ex.getMessage());
         } catch(Exception ex) {
-            taskListener.getLogger().println(ex);
+            taskListener.getLogger().println(ex.getMessage());
         }
 
         if(serviceNowResult != null) {
 
             if(!ActionStatus.FAILED.getStatus().equals(serviceNowResult.getStatus())) {
                 if(!ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
-                    taskListener.getLogger().format("\nChecking progress");
+                    taskListener.getLogger().format("Checking progress");
                     try {
                         serviceNowResult = checkProgress(restClient, taskListener.getLogger(), progressCheckInterval);
                     } catch(InterruptedException e) {
@@ -110,6 +113,16 @@ public class RollbackAppBuilder extends ProgressBuilder {
                             taskListener.getLogger().println("\nApplication rollback DONE but failed: " + serviceNowResult.getStatusMessage());
                             result = false;
                         }
+                    }
+                } else { //SUCCESS
+                    if(serviceNowResult.getPercentComplete() == 100) {
+                        if(StringUtils.isNotBlank(serviceNowResult.getStatusMessage())) {
+                            taskListener.getLogger().println("Application rollback DONE but with message: " + serviceNowResult.getStatusMessage());
+                        }
+                        result = true;
+                    } else {
+                        taskListener.getLogger().println("Application rollback DONE but not completed! Details: " + serviceNowResult.toString());
+                        result = false;
                     }
                 }
             } else { // serve result with the status FAILED
