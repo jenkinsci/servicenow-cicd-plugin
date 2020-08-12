@@ -7,6 +7,7 @@ import org.mockserver.junit.MockServerRule;
 import org.mockserver.verify.VerificationTimes;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockserver.model.HttpRequest.request;
@@ -35,7 +36,7 @@ public class ServiceNowAPIClientIntegrationTest {
     }
 
     @Test
-    public void applyChanges() throws IOException {
+    public void applyChanges() throws IOException, URISyntaxException {
         // given
         String systemId = "testSystemId";
         mockServer.when(
@@ -116,7 +117,7 @@ public class ServiceNowAPIClientIntegrationTest {
     }
 
     @Test
-    public void applyChanges_invalidAppSysId() throws IOException {
+    public void applyChanges_invalidAppSysId() throws IOException, URISyntaxException {
         // given
         String systemId = "testSystemId";
         mockServer.when(
@@ -144,7 +145,7 @@ public class ServiceNowAPIClientIntegrationTest {
     }
 
     @Test
-    public void checkProgress() throws IOException {
+    public void checkProgress() throws IOException, URISyntaxException {
         // given
         String commitId = "1590365066990cfe14b2f974cfd9db33b4c49be6";
         String PROGRESS_ID2 = "5678";

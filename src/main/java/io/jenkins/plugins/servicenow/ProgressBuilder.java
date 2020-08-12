@@ -1,8 +1,7 @@
 package io.jenkins.plugins.servicenow;
 
-import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.google.inject.Guice;
+import com.google.inject.Inject;
 import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.FilePath;
@@ -34,6 +33,9 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
     private String credentialsId;
     private String apiVersion;
 
+    private RestClientFactory clientFactory;
+    private ServiceNowAPIClient restClient;
+
     public ProgressBuilder(final String credentialsId) {
         super();
         this.credentialsId = credentialsId;
@@ -62,6 +64,23 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
         return apiVersion;
     }
 
+    public RestClientFactory getClientFactory() {
+        return clientFactory;
+    }
+
+    @Inject
+    public void setClientFactory(RestClientFactory clientFactory) {
+        this.clientFactory = clientFactory;
+    }
+
+    public ServiceNowAPIClient getRestClient() {
+        return this.restClient;
+    }
+
+    public void setRestClient(ServiceNowAPIClient restClient) {
+        this.restClient = restClient;
+    }
+
     @Override
     public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher,
             @Nonnull TaskListener taskListener) throws InterruptedException, IOException {
@@ -70,11 +89,14 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
 
         setupBuilderParameters(run.getEnvironment(taskListener));
 
-        final StandardUsernamePasswordCredentials usernamePasswordCredentials =
-                CredentialsProvider.findCredentialById(this.credentialsId, StandardUsernamePasswordCredentials.class, run, new DomainRequirement());
+        if (this.clientFactory == null) {
+            Guice.createInjector(new ServiceNowModule()).injectMembers(this);
+        }
+
+        this.restClient = this.clientFactory.create(run, url, credentialsId);
         final Integer progressCheckInterval = Integer.parseInt(run.getEnvironment((taskListener)).get(BuildParameters.progressCheckInterval, String.valueOf(CHECK_PROGRESS_INTERVAL)));
 
-        boolean success = perform(taskListener, usernamePasswordCredentials.getUsername(), usernamePasswordCredentials.getPassword().getPlainText(), progressCheckInterval);
+        boolean success = perform(taskListener, progressCheckInterval);
 
         stopWatch.stop();
         Long durationInMillis = stopWatch.getTotalTimeMillis();
@@ -86,7 +108,6 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
         String time = String.format("%02d:%02d:%02d.%d", hour, minute, second, millis);
         taskListener.getLogger().println(String.format("Elapsed Time: %s ([%f] seconds)", time, stopWatch.getTotalTimeSeconds()));
 
-        //((AbstractBuild)run).getBuildVariables();
         List<ParameterValue> buildVariablesForNextSteps = this.setupParametersAfterBuildStep();
         ParametersAction newAction = run.getAction(ParametersAction.class).createUpdated(buildVariablesForNextSteps);
         run.addOrReplaceAction(newAction);
@@ -96,7 +117,7 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
         }
     }
 
-    protected abstract boolean perform(@Nonnull final TaskListener taskListener, final String username, final String password, final Integer progressCheckInterval);
+    protected abstract boolean perform(@Nonnull final TaskListener taskListener, final Integer progressCheckInterval);
 
     protected void setupBuilderParameters(EnvVars environment) {
         if(StringUtils.isBlank(this.url)) {
@@ -116,7 +137,10 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
         return Collections.emptyList();
     }
 
-    protected Result checkProgress(ServiceNowAPIClient restClient, PrintStream logger, int progressCheckInterval) throws InterruptedException {
+    protected Result checkProgress(PrintStream logger, int progressCheckInterval) throws InterruptedException {
+        if(restClient == null) {
+            throw new IllegalStateException("Service Now REST client was not initialized!");
+        }
         Result result = null;
         do {
             logger.print(".");

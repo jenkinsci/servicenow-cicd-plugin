@@ -8,7 +8,6 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 import io.jenkins.plugins.servicenow.api.ActionStatus;
-import io.jenkins.plugins.servicenow.api.ServiceNowAPIClient;
 import io.jenkins.plugins.servicenow.api.ServiceNowApiException;
 import io.jenkins.plugins.servicenow.api.model.Result;
 import org.apache.commons.lang.StringUtils;
@@ -79,16 +78,14 @@ public class ApplyChangesBuilder extends ProgressBuilder {
     }
 
     @Override
-    protected boolean perform(@Nonnull TaskListener taskListener, final String username, final String password, final Integer progressCheckInterval) {
+    protected boolean perform(@Nonnull TaskListener taskListener, final Integer progressCheckInterval) {
         boolean result = false;
 
         taskListener.getLogger().println("\nSTART: ServiceNow - Apply changes");
 
-        ServiceNowAPIClient restClient = new ServiceNowAPIClient(this.getUrl(), username, password);
-
         Result serviceNowResult = null;
         try {
-            serviceNowResult = restClient.applyChanges(this.getAppScope(), this.getAppSysId(), this.getBranchName());
+            serviceNowResult = getRestClient().applyChanges(this.getAppScope(), this.getAppSysId(), this.getBranchName());
         } catch(ServiceNowApiException ex) {
             taskListener.getLogger().format("Error occurred when API with the action 'apply changes' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
         }  catch (UnknownHostException ex) {
@@ -103,7 +100,7 @@ public class ApplyChangesBuilder extends ProgressBuilder {
                 if(!ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
                     taskListener.getLogger().format("Checking progress");
                     try {
-                        serviceNowResult = checkProgress(restClient, taskListener.getLogger(), progressCheckInterval);
+                        serviceNowResult = checkProgress(taskListener.getLogger(), progressCheckInterval);
                     } catch(InterruptedException e) {
                         serviceNowResult = null;
                         e.printStackTrace();

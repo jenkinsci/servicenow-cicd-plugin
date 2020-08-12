@@ -1,21 +1,15 @@
 package io.jenkins.plugins.servicenow;
 
-import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
-import com.cloudbees.plugins.credentials.domains.DomainRequirement;
-import hudson.*;
+import hudson.Extension;
 import hudson.model.AbstractProject;
-import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 import io.jenkins.plugins.servicenow.api.ActionStatus;
 import io.jenkins.plugins.servicenow.api.ResponseUnboundParameters;
-import io.jenkins.plugins.servicenow.api.ServiceNowAPIClient;
 import io.jenkins.plugins.servicenow.api.ServiceNowApiException;
 import io.jenkins.plugins.servicenow.api.model.Result;
-import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -23,12 +17,10 @@ import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
-import org.springframework.util.StopWatch;
 
 import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.text.MessageFormat;
 
 public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
@@ -122,16 +114,14 @@ public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
     }
 
     @Override
-    protected boolean perform(@Nonnull final TaskListener taskListener, final String username, final String password, final Integer progressCheckInterval) {
+    protected boolean perform(@Nonnull final TaskListener taskListener, final Integer progressCheckInterval) {
         boolean result = false;
 
         taskListener.getLogger().format("\nSTART: ServiceNow - Run test suite '%s' [%s]",this.getTestSuiteName(), this.getTestSuiteSysId());
 
-        ServiceNowAPIClient restClient = new ServiceNowAPIClient(this.getUrl(), username, password);
-
         Result serviceNowResult = null;
         try {
-            serviceNowResult = restClient.runTestSuite(this.getTestSuiteName(),
+            serviceNowResult = getRestClient().runTestSuite(this.getTestSuiteName(),
                     this.getTestSuiteSysId(),
                     this.getOsName(),
                     this.getOsVersion(),
@@ -152,7 +142,7 @@ public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
                 if(!ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
                     taskListener.getLogger().format("\nChecking progress");
                     try {
-                        serviceNowResult = checkProgress(restClient, taskListener.getLogger(), progressCheckInterval);
+                        serviceNowResult = checkProgress(taskListener.getLogger(), progressCheckInterval);
                     } catch(InterruptedException e) {
                         serviceNowResult = null;
                         e.printStackTrace();
@@ -163,7 +153,7 @@ public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
                             taskListener.getLogger().println("\nTest suite DONE.");
                             result = true;
 
-                            result &= generateTestResult(taskListener, serviceNowResult, restClient);
+                            result &= generateTestResult(taskListener, serviceNowResult);
                         } else {
                             taskListener.getLogger().println("\nTest suite DONE but failed: " + serviceNowResult.getStatusMessage());
                             result = false;
@@ -178,21 +168,21 @@ public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
         return result;
     }
 
-    private boolean generateTestResult(@Nonnull TaskListener taskListener, final Result serviceNowResult, ServiceNowAPIClient restClient) {
+    private boolean generateTestResult(@Nonnull TaskListener taskListener, final Result serviceNowResult) {
         if(Boolean.TRUE.equals(this.withResults)) {
             final String testSuiteResultsId = serviceNowResult.getLinks().getResults() != null ?
                     serviceNowResult.getLinks().getResults().getId() : StringUtils.EMPTY;
-            return performTestSuiteResults(taskListener, restClient, testSuiteResultsId);
+            return performTestSuiteResults(taskListener, testSuiteResultsId);
         }
         return true;
     }
 
-    private boolean performTestSuiteResults(final TaskListener taskListener, final ServiceNowAPIClient restClient, final String resultsId) {
+    private boolean performTestSuiteResults(final TaskListener taskListener, final String resultsId) {
         boolean result = false;
 
         Result serviceNowResult = null;
         try {
-            serviceNowResult = restClient.getTestSuiteResults(resultsId);
+            serviceNowResult = getRestClient().getTestSuiteResults(resultsId);
         } catch(ServiceNowApiException ex) {
             taskListener.getLogger().format("Error occurred when API 'GET /sn_cicd/testsuite/results/{result_id}' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
         } catch(Exception ex) {

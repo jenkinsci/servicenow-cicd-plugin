@@ -7,7 +7,6 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 import io.jenkins.plugins.servicenow.api.ActionStatus;
-import io.jenkins.plugins.servicenow.api.ServiceNowAPIClient;
 import io.jenkins.plugins.servicenow.api.ServiceNowApiException;
 import io.jenkins.plugins.servicenow.api.model.Result;
 import org.apache.commons.lang.StringUtils;
@@ -44,16 +43,14 @@ public class RollbackPluginBuilder extends ProgressBuilder {
     }
 
     @Override
-    protected boolean perform(@Nonnull final TaskListener taskListener, final String username, final String password, final Integer progressCheckInterval) {
+    protected boolean perform(@Nonnull final TaskListener taskListener, final Integer progressCheckInterval) {
         boolean result = false;
 
         taskListener.getLogger().println("\nSTART: ServiceNow - Roll back the plugin " + this.pluginId);
 
-        ServiceNowAPIClient restClient = new ServiceNowAPIClient(this.getUrl(), username, password);
-
         Result serviceNowResult = null;
         try {
-            serviceNowResult = restClient.rollbackPlugin(this.getPluginId());
+            serviceNowResult = getRestClient().rollbackPlugin(this.getPluginId());
         } catch(ServiceNowApiException ex) {
             taskListener.getLogger().format("Error occurred when API with the action 'rollback plugin' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
         }  catch (UnknownHostException ex) {
@@ -68,7 +65,7 @@ public class RollbackPluginBuilder extends ProgressBuilder {
                 if(!ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
                     taskListener.getLogger().format("Checking progress");
                     try {
-                        serviceNowResult = checkProgress(restClient, taskListener.getLogger(), progressCheckInterval);
+                        serviceNowResult = checkProgress(taskListener.getLogger(), progressCheckInterval);
                     } catch(InterruptedException e) {
                         serviceNowResult = null;
                         e.printStackTrace();
