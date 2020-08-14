@@ -1,5 +1,6 @@
 package io.jenkins.plugins.servicenow;
 
+import com.google.inject.Guice;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.model.AbstractProject;
@@ -12,6 +13,7 @@ import hudson.util.FormValidation;
 import io.jenkins.plugins.servicenow.api.ActionStatus;
 import io.jenkins.plugins.servicenow.api.ServiceNowApiException;
 import io.jenkins.plugins.servicenow.api.model.Result;
+import io.jenkins.plugins.servicenow.application.ApplicationVersion;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -21,10 +23,14 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class PublishAppBuilder extends ProgressBuilder {
 
@@ -34,8 +40,11 @@ public class PublishAppBuilder extends ProgressBuilder {
     private String appSysId;
     private String appVersion;
     private String devNotes;
+    private Boolean obtainVersionFromSC = true;
 
     private String calculatedAppVersion;
+
+    private ApplicationVersion applicationVersion;
 
     @DataBoundConstructor
     public PublishAppBuilder(final String credentialsId) {
@@ -76,6 +85,20 @@ public class PublishAppBuilder extends ProgressBuilder {
     @DataBoundSetter
     public void setDevNotes(String devNotes) {
         this.devNotes = devNotes;
+    }
+
+    public Boolean getObtainVersionFromSC() {
+        return obtainVersionFromSC;
+    }
+
+    @DataBoundSetter
+    public void setObtainVersionFromSC(Boolean obtainVersionFromSC) {
+        this.obtainVersionFromSC = obtainVersionFromSC;
+    }
+
+    @Inject
+    public void setApplicationVersion(ApplicationVersion applicationVersion) {
+        this.applicationVersion = applicationVersion;
     }
 
     @Override
@@ -146,6 +169,29 @@ public class PublishAppBuilder extends ProgressBuilder {
         } else {
             this.calculatedAppVersion = this.appVersion;
         }
+        if(this.obtainVersionFromSC) {
+            this.calculatedAppVersion = Optional.ofNullable(getNextVersionFromSc(environment.get("WORKSPACE")))
+                    .orElseGet(() -> {
+                        LOG.warn("Application version couldn't be found in the workspace for the build '" + environment.get("JOB_NAME") +
+                                "' #" + environment.get("BUILD_NUMBER"));
+                        return this.calculatedAppVersion;
+                    });
+        }
+    }
+
+    private String getNextVersionFromSc(String workspace) {
+        if(this.applicationVersion == null) {
+            Guice.createInjector(new ServiceNowModule()).injectMembers(this);
+        }
+        final String currentVersion = this.applicationVersion.getVersion(workspace, this.appSysId, this.appScope);
+        if(StringUtils.isNotBlank(currentVersion)) {
+            String[] versionNumbers = currentVersion.split("\\.");
+            if(versionNumbers.length > 1) {
+                versionNumbers[versionNumbers.length - 1] = String.valueOf(Integer.parseInt(versionNumbers[2]) + 1);
+                return Arrays.stream(versionNumbers).collect(Collectors.joining("."));
+            }
+        }
+        return null;
     }
 
     @Override
@@ -158,30 +204,30 @@ public class PublishAppBuilder extends ProgressBuilder {
         return parameters;
     }
 
-    @Symbol("publishApp")
-    @Extension
-    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
+@Symbol("publishApp")
+@Extension
+public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
-        public FormValidation doCheckName(@QueryParameter String url)
-                throws IOException, ServletException {
+    public FormValidation doCheckName(@QueryParameter String url)
+            throws IOException, ServletException {
 
-            final String regex = "^https?://.+";
-            if(url.matches(regex)) {
-                return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
-            }
-            return FormValidation.ok();
+        final String regex = "^https?://.+";
+        if(url.matches(regex)) {
+            return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
         }
-
-        @Override
-        public boolean isApplicable(Class<? extends AbstractProject> aClass) {
-            return true;
-        }
-
-
-        @Override
-        public String getDisplayName() {
-            return Messages.PublishAppBuilder_DescriptorImpl_DisplayName();
-        }
-
+        return FormValidation.ok();
     }
+
+    @Override
+    public boolean isApplicable(Class<? extends AbstractProject> aClass) {
+        return true;
+    }
+
+
+    @Override
+    public String getDisplayName() {
+        return Messages.PublishAppBuilder_DescriptorImpl_DisplayName();
+    }
+
+}
 }

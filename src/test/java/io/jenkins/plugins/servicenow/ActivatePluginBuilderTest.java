@@ -2,7 +2,6 @@ package io.jenkins.plugins.servicenow;
 
 import hudson.AbortException;
 import hudson.EnvVars;
-import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.ParametersAction;
@@ -11,8 +10,6 @@ import io.jenkins.plugins.servicenow.api.ActionStatus;
 import io.jenkins.plugins.servicenow.api.ServiceNowAPIClient;
 import io.jenkins.plugins.servicenow.api.model.Result;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -21,13 +18,12 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URISyntaxException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.hamcrest.core.Is.is;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class )
@@ -37,8 +33,6 @@ public class ActivatePluginBuilderTest {
 
     @Mock
     private AbstractBuild runMock;
-    //@Mock
-    //private FilePath filePathMock;
     @Mock
     private Launcher launcherMock;
     @Mock
