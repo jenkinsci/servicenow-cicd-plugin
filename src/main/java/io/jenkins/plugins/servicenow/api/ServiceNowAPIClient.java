@@ -86,7 +86,7 @@ public class ServiceNowAPIClient {
 
         List<NameValuePair> params = new ArrayList<>();
         addParameter(params, RequestParameters.APP_SCOPE, applicationScope);
-        addParameter(params, RequestParameters.SYSTEM_ID, systemId);
+        addParameter(params, RequestParameters.APP_SYSTEM_ID, systemId);
         addParameter(params, RequestParameters.BRANCH_NAME, branchName);
 
         return sendRequest(endpoint, params, null);
@@ -140,7 +140,7 @@ public class ServiceNowAPIClient {
         LOG.debug("ServiceNow API call > publishApp");
 
         List<NameValuePair> params = new ArrayList<>();
-        addParameter(params, RequestParameters.APP_SCOPE, applicationScope);
+        addParameter(params, RequestParameters.SCOPE, applicationScope);
         addParameter(params, RequestParameters.SYSTEM_ID, applicationSysId);
         addParameter(params, RequestParameters.APP_VERSION, applicationVersion);
         addParameter(params, RequestParameters.DEV_NOTES, devNotes);
@@ -154,7 +154,7 @@ public class ServiceNowAPIClient {
         LOG.debug("ServiceNow API call > installApp");
 
         List<NameValuePair> params = new ArrayList<>();
-        addParameter(params, RequestParameters.APP_SCOPE, applicationScope);
+        addParameter(params, RequestParameters.SCOPE, applicationScope);
         addParameter(params, RequestParameters.SYSTEM_ID, applicationSysId);
         addParameter(params, RequestParameters.APP_VERSION, applicationVersion);
 
@@ -166,7 +166,7 @@ public class ServiceNowAPIClient {
         LOG.debug("ServiceNow API call > rollbackApp");
 
         List<NameValuePair> params = new ArrayList<>();
-        addParameter(params, RequestParameters.APP_SCOPE, applicationScope);
+        addParameter(params, RequestParameters.SCOPE, applicationScope);
         addParameter(params, RequestParameters.SYSTEM_ID, applicationSysId);
         addParameter(params, RequestParameters.APP_VERSION, rollbackVersion);
 

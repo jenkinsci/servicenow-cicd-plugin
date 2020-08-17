@@ -3,8 +3,10 @@ package io.jenkins.plugins.servicenow.api;
 public interface RequestParameters {
 
     String API_VERSION = "api_version";
-    String APP_SCOPE = "scope";
-    String SYSTEM_ID = "app_sys_id";
+    String SCOPE = "scope";
+    String APP_SCOPE = "app_scope";
+    String SYSTEM_ID = "sys_id";
+    String APP_SYSTEM_ID = "app_sys_id";
     String BRANCH_NAME = "branch_name";
 
     String TEST_SUITE_NAME = "test_suite_name";
