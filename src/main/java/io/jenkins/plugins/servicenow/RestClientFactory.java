@@ -4,6 +4,7 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import hudson.model.Run;
+import hudson.util.Secret;
 import io.jenkins.plugins.servicenow.api.ServiceNowAPIClient;
 
 public class RestClientFactory implements RunFactory<ServiceNowAPIClient> {
@@ -19,6 +20,11 @@ public class RestClientFactory implements RunFactory<ServiceNowAPIClient> {
     private ServiceNowAPIClient create(Run<?, ?> run, String apiUrl, String credentialsId) {
         final StandardUsernamePasswordCredentials usernamePasswordCredentials =
                 CredentialsProvider.findCredentialById(credentialsId, StandardUsernamePasswordCredentials.class, run, new DomainRequirement());
-        return new ServiceNowAPIClient(apiUrl, usernamePasswordCredentials.getUsername(), usernamePasswordCredentials.getPassword().getPlainText());
+        ServiceNowAPIClient serviceNowAPIClient = null;
+        if(usernamePasswordCredentials != null) {
+            final Secret password = usernamePasswordCredentials.getPassword();
+            serviceNowAPIClient = new ServiceNowAPIClient(apiUrl, usernamePasswordCredentials.getUsername(), password.getPlainText());
+        }
+        return serviceNowAPIClient;
     }
 }

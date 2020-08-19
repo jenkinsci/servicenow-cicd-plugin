@@ -95,7 +95,7 @@ public class InstallAppBuilder extends ProgressBuilder {
         try {
             serviceNowResult = getRestClient().installApp(this.getAppScope(), this.getAppSysId(), this.appVersionToInstall);
         } catch(ServiceNowApiException ex) {
-            taskListener.getLogger().format("Error occurred when API with the action 'install application' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
+            taskListener.getLogger().format("Error occurred when API with the action 'install application' was called: '%s' [details: '%s'].%n", ex.getMessage(), ex.getDetail());
         }  catch (UnknownHostException ex) {
             taskListener.getLogger().println("Check connection: " + ex.getMessage());
         } catch(Exception ex) {

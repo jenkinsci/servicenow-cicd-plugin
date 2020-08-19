@@ -1,4 +1,4 @@
 <?jelly escape-by-default='true'?>
 <div>
-    TODO
+    This plugin delivers continuous integration and continuous delivery tools based on ServiceNow platform.
 </div>

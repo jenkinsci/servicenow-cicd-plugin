@@ -111,7 +111,7 @@ public class PublishAppBuilder extends ProgressBuilder {
         try {
             serviceNowResult = getRestClient().publishApp(this.getAppScope(), this.getAppSysId(), this.calculatedAppVersion, this.getDevNotes());
         } catch(ServiceNowApiException ex) {
-            taskListener.getLogger().format("Error occurred when API with the action 'publish application' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
+            taskListener.getLogger().format("Error occurred when API with the action 'publish application' was called: '%s' [details: '%s'].%n", ex.getMessage(), ex.getDetail());
         } catch(Exception ex) {
             taskListener.getLogger().println(ex);
         }

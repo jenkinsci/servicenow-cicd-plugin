@@ -59,7 +59,7 @@ public class WorkspaceApplicationVersion implements ApplicationVersion {
     private String searchForRegex(final File file, final String lineRegex, final String splitRegex) throws FileNotFoundException {
         final InputStream inputStream = new FileInputStream(file);
         try (BufferedReader br
-                     = new BufferedReader(new InputStreamReader(inputStream))) {
+                     = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"))) {
             String line;
             while ((line = br.readLine()) != null) {
                 if(line.matches(lineRegex)) {

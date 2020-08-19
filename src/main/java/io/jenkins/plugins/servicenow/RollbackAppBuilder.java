@@ -83,7 +83,7 @@ public class RollbackAppBuilder extends ProgressBuilder {
         try {
             serviceNowResult = getRestClient().rollbackApp(this.getAppScope(), this.getAppSysId(), this.getRollbackAppVersion());
         } catch(ServiceNowApiException ex) {
-            taskListener.getLogger().format("Error occurred when API with the action 'rollback application' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
+            taskListener.getLogger().format("Error occurred when API with the action 'rollback application' was called: '%s' [details: '%s'].%n", ex.getMessage(), ex.getDetail());
         }  catch (UnknownHostException ex) {
             taskListener.getLogger().println("Check connection: " + ex.getMessage());
         } catch(Exception ex) {

@@ -5,8 +5,8 @@
              description="${%VersionDescr}">
         <f:textbox/>
     </f:entry>
-    <f:entry title="${GetVersionFromSC}" field="obtainVersionFromSC"
-             description="${GetVersionFromSCDescr}">
+    <f:entry title="${%GetVersionFromSC}" field="obtainVersionFromSC"
+             description="${%GetVersionFromSCDescr}">
         <f:checkbox/>
     </f:entry>
     <f:advanced>

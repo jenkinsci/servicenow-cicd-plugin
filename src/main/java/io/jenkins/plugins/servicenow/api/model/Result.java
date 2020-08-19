@@ -92,9 +92,9 @@ public class Result extends JsonResponseObject {
                 toString(sb, progress);
             }
             final LinkObject source = links.getSource();
-            if(progress != null) {
+            if(source != null) {
                 sb.append("\n\t\t'source':");
-                toString(sb, progress);
+                toString(sb, source);
             }
         }
         sb.append("\n\t'status': ").append(status);

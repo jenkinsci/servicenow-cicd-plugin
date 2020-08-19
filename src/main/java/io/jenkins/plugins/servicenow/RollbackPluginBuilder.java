@@ -52,7 +52,7 @@ public class RollbackPluginBuilder extends ProgressBuilder {
         try {
             serviceNowResult = getRestClient().rollbackPlugin(this.getPluginId());
         } catch(ServiceNowApiException ex) {
-            taskListener.getLogger().format("Error occurred when API with the action 'rollback plugin' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
+            taskListener.getLogger().format("Error occurred when API with the action 'rollback plugin' was called: '%s' [details: '%s'].%n", ex.getMessage(), ex.getDetail());
         }  catch (UnknownHostException ex) {
             taskListener.getLogger().println("Check connection: " + ex.getMessage());
         } catch(Exception ex) {

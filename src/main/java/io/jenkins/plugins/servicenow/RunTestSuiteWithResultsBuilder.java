@@ -117,7 +117,7 @@ public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
     protected boolean perform(@Nonnull final TaskListener taskListener, final Integer progressCheckInterval) {
         boolean result = false;
 
-        taskListener.getLogger().format("\nSTART: ServiceNow - Run test suite '%s' [%s]",this.getTestSuiteName(), this.getTestSuiteSysId());
+        taskListener.getLogger().format("%nSTART: ServiceNow - Run test suite '%s' [%s]",this.getTestSuiteName(), this.getTestSuiteSysId());
 
         Result serviceNowResult = null;
         try {
@@ -128,7 +128,7 @@ public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
                     this.getBrowserName(),
                     this.getBrowserVersion());
         } catch(ServiceNowApiException ex) {
-            taskListener.getLogger().format("Error occurred when API with the action 'run test suite' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
+            taskListener.getLogger().format("Error occurred when API with the action 'run test suite' was called: '%s' [details: '%s'].%n", ex.getMessage(), ex.getDetail());
         } catch(Exception ex) {
             taskListener.getLogger().println(ex);
         }
@@ -140,7 +140,7 @@ public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
 
             if(!ActionStatus.FAILED.getStatus().equals(serviceNowResult.getStatus())) {
                 if(!ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
-                    taskListener.getLogger().format("\nChecking progress");
+                    taskListener.getLogger().format("%nChecking progress");
                     try {
                         serviceNowResult = checkProgress(taskListener.getLogger(), progressCheckInterval);
                     } catch(InterruptedException e) {
@@ -184,7 +184,7 @@ public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
         try {
             serviceNowResult = getRestClient().getTestSuiteResults(resultsId);
         } catch(ServiceNowApiException ex) {
-            taskListener.getLogger().format("Error occurred when API 'GET /sn_cicd/testsuite/results/{result_id}' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
+            taskListener.getLogger().format("Error occurred when API 'GET /sn_cicd/testsuite/results/{result_id}' was called: '%s' [details: '%s'].%n", ex.getMessage(), ex.getDetail());
         } catch(Exception ex) {
             taskListener.getLogger().println(ex);
         }
@@ -205,13 +205,13 @@ public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
 
     private String formatTestResults(Result serviceNowResult) {
         return MessageFormat.format(
-                "\tTest suite name:\t{0}\n" +
-                        "\tStatus:\t\t{1}\n" +
-                        "\tDuration:\t{2}\n" +
-                        "\tSuccessfully rolledup tests:\t{3}\n" +
-                        "\tFailed rolledup tests:\t{4}\n" +
-                        "\tSkipped rolledup tests:\t{5}\n" +
-                        "\tRolledup tests with error:\t{6}\n" +
+                "\tTest suite name:\t{0}%n" +
+                        "\tStatus:\t\t{1}%n" +
+                        "\tDuration:\t{2}%n" +
+                        "\tSuccessfully rolledup tests:\t{3}%n" +
+                        "\tFailed rolledup tests:\t{4}%n" +
+                        "\tSkipped rolledup tests:\t{5}%n" +
+                        "\tRolledup tests with error:\t{6}%n" +
                         "\tLink to the result: {7}",
                 getValue(serviceNowResult, ResponseUnboundParameters.TestResults.name),
                 getValue(serviceNowResult, ResponseUnboundParameters.TestResults.status),

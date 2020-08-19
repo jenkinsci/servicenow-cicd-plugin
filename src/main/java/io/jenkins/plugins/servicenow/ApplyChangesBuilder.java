@@ -87,7 +87,7 @@ public class ApplyChangesBuilder extends ProgressBuilder {
         try {
             serviceNowResult = getRestClient().applyChanges(this.getAppScope(), this.getAppSysId(), this.getBranchName());
         } catch(ServiceNowApiException ex) {
-            taskListener.getLogger().format("Error occurred when API with the action 'apply changes' was called: '%s' [details: '%s'].\n", ex.getMessage(), ex.getDetail());
+            taskListener.getLogger().format("Error occurred when API with the action 'apply changes' was called: '%s' [details: '%s'].%n", ex.getMessage(), ex.getDetail());
         }  catch (UnknownHostException ex) {
             taskListener.getLogger().println("Check connection: " + ex.getMessage());
         } catch(Exception ex) {
@@ -111,7 +111,8 @@ public class ApplyChangesBuilder extends ProgressBuilder {
                         taskListener.getLogger().println("\nChanges applied.");
                         result = true;
                     } else {
-                        taskListener.getLogger().println("\nAction DONE but failed: " + serviceNowResult.getStatusMessage());
+                        String message = serviceNowResult != null ? serviceNowResult.getStatusMessage() : "[no message]";
+                        taskListener.getLogger().println("\nAction DONE but failed: " + message);
                         result = false;
                     }
                 }
