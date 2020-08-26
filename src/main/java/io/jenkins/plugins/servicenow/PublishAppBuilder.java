@@ -204,7 +204,7 @@ public class PublishAppBuilder extends ProgressBuilder {
         return parameters;
     }
 
-@Symbol("publishApp")
+@Symbol("snPublishApp")
 @Extension
 public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 

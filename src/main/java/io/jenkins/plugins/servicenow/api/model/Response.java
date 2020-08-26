@@ -4,23 +4,16 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang.StringUtils;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@XmlRootElement(name = "response")
 public class  Response extends JsonResponseObject {
 
     @JsonProperty
-    @XmlElement
     private Result result;
 
     @JsonProperty
-    @XmlElement
     private Error error;
 
     @JsonProperty
-    @XmlElement
     private String status;
 
     public Result getResult() {

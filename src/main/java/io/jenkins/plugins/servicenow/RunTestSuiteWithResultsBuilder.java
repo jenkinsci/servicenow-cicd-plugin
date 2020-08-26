@@ -224,7 +224,7 @@ public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
         );
     }
 
-    @Symbol("runTestSuiteWithResults")
+    @Symbol("snRunTestSuite")
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 

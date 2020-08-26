@@ -1,7 +1,11 @@
 package io.jenkins.plugins.servicenow.api;
 
 import io.jenkins.plugins.servicenow.api.model.Result;
-import org.junit.*;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.junit.MockServerRule;
 import org.mockserver.verify.VerificationTimes;
@@ -9,28 +13,32 @@ import org.mockserver.verify.VerificationTimes;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
 public class ServiceNowAPIClientIntegrationTest {
 
+    private static final Logger LOG = LogManager.getLogger(ServiceNowAPIClientIntegrationTest.class);
+
     @Rule
-    public MockServerRule mockServerRule = new MockServerRule(this, PORT);
+    public MockServerRule mockServerRule = new MockServerRule(this);
 
     private static MockServerClient mockServer;
+    private int PORT;
 
     private ServiceNowAPIClient serviceNowAPIClient;
 
     private static String HOST = "localhost";
-    private static int PORT = 1080;
     private static String USER = "test";
     private static String PASSWORD = "secret";
     private static String PROGRESS_ID = "1234";
 
     @Before
     public void setUp() throws Exception {
-        final String url = "http://" + HOST + ":" + mockServerRule.getPort();
+        PORT = mockServerRule.getPort();
+        final String url = "http://" + HOST + ":" + PORT;
+        LOG.info("Mock server started at port: " + PORT);
 
         serviceNowAPIClient = new ServiceNowAPIClient(url, USER, PASSWORD);
     }

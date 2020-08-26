@@ -103,7 +103,7 @@ public class ActivatePluginBuilder extends ProgressBuilder {
         return result;
     }
 
-    @Symbol("activatePlugin")
+    @Symbol("snActivatePlugin")
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 

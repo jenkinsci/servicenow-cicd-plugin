@@ -148,7 +148,7 @@ public class RollbackAppBuilder extends ProgressBuilder {
         }
     }
 
-    @Symbol("rollbackApp")
+    @Symbol("snRollbackApp")
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 

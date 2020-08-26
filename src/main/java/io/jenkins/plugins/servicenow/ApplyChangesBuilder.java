@@ -128,7 +128,7 @@ public class ApplyChangesBuilder extends ProgressBuilder {
         return result;
     }
 
-    @Symbol("applyChanges")
+    @Symbol("snApplyChanges")
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 

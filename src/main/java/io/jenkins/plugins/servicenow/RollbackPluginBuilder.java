@@ -103,7 +103,7 @@ public class RollbackPluginBuilder extends ProgressBuilder {
         return result;
     }
 
-    @Symbol("rollbackPlugin")
+    @Symbol("snRollbackPlugin")
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
