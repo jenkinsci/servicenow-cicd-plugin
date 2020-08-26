@@ -167,7 +167,7 @@ public class InstallAppBuilder extends ProgressBuilder {
         return parameters;
     }
 
-    @Symbol("installApp")
+    @Symbol("snInstallApp")
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 

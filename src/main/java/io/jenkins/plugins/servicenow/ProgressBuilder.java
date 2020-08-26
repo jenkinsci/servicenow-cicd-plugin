@@ -55,6 +55,10 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
         this.credentialsId = credentialsId;
     }
 
+    public String getCredentialsId() {
+        return this.credentialsId;
+    }
+
     @DataBoundSetter
     public void setApiVersion(String apiVersion) {
         this.apiVersion = apiVersion;
