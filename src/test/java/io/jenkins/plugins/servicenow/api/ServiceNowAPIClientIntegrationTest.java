@@ -1,5 +1,6 @@
 package io.jenkins.plugins.servicenow.api;
 
+import hudson.util.Secret;
 import io.jenkins.plugins.servicenow.api.model.Result;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -31,7 +32,7 @@ public class ServiceNowAPIClientIntegrationTest {
 
     private static String HOST = "localhost";
     private static String USER = "test";
-    private static String PASSWORD = "secret";
+    private static Secret PASSWORD_MOCK;
     private static String PROGRESS_ID = "1234";
 
     @Before
@@ -40,7 +41,7 @@ public class ServiceNowAPIClientIntegrationTest {
         final String url = "http://" + HOST + ":" + PORT;
         LOG.info("Mock server started at port: " + PORT);
 
-        serviceNowAPIClient = new ServiceNowAPIClient(url, USER, PASSWORD);
+        serviceNowAPIClient = new ServiceNowAPIClient(url, USER, PASSWORD_MOCK);
     }
 
     @Test

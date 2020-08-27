@@ -38,7 +38,7 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
      * Rest client initialized every time a build is performed and used by subclasses of the builder.
      * There is no need to serialize the field.
      */
-    private ServiceNowAPIClient restClient;
+    private transient ServiceNowAPIClient restClient;
 
     public ProgressBuilder(final String credentialsId) {
         super();
