@@ -298,7 +298,7 @@ public class ServiceNowAPIClient {
         }
 
         request.setURI(uriBuilder.build());
-        request.setHeader(HttpHeaders.USER_AGENT, "Jenkins plugin client");
+        request.setHeader(HttpHeaders.USER_AGENT, "sncicd_extint_jenkins");
         request.setHeader(HttpHeaders.ACCEPT, getAcceptResponseType());
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.JSON);
 
