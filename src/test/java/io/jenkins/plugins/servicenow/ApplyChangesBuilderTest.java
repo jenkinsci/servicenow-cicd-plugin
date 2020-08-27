@@ -41,7 +41,7 @@ public class ApplyChangesBuilderTest {
     }
 
 
-    static class TestData {
+    private static class TestData {
         public static String appSysId = "test001";
         public static String appScope = "testScope";
         public static String branchName = "testBranch";

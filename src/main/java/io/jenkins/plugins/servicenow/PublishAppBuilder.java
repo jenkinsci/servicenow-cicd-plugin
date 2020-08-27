@@ -40,7 +40,7 @@ public class PublishAppBuilder extends ProgressBuilder {
     private String appSysId;
     private String appVersion;
     private String devNotes;
-    private Boolean obtainVersionFromSC = true;
+    private Boolean obtainVersionFromSC = false;
 
     private String calculatedAppVersion;
 
@@ -169,7 +169,7 @@ public class PublishAppBuilder extends ProgressBuilder {
         } else {
             this.calculatedAppVersion = this.appVersion;
         }
-        if(this.obtainVersionFromSC) {
+        if(Boolean.TRUE.equals(this.obtainVersionFromSC)) {
             this.calculatedAppVersion = Optional.ofNullable(getNextVersionFromSc(environment.get("WORKSPACE")))
                     .orElseGet(() -> {
                         LOG.warn("Application version couldn't be found in the workspace for the build '" + environment.get("JOB_NAME") +

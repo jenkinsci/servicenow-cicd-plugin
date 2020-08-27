@@ -33,7 +33,11 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
     private String credentialsId;
     private String apiVersion;
 
-    private RestClientFactory clientFactory;
+    private RunFactory clientFactory;
+    /**
+     * Rest client initialized every time a build is performed and used by subclasses of the builder.
+     * There is no need to serialize the field.
+     */
     private ServiceNowAPIClient restClient;
 
     public ProgressBuilder(final String credentialsId) {
@@ -68,12 +72,12 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
         return apiVersion;
     }
 
-    public RestClientFactory getClientFactory() {
+    public RunFactory getClientFactory() {
         return clientFactory;
     }
 
     @Inject
-    public void setClientFactory(RestClientFactory clientFactory) {
+    public void setClientFactory(RunFactory clientFactory) {
         this.clientFactory = clientFactory;
     }
 
@@ -97,7 +101,7 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
             Guice.createInjector(new ServiceNowModule()).injectMembers(this);
         }
 
-        this.restClient = this.clientFactory.create(run, url, credentialsId);
+        this.restClient = (ServiceNowAPIClient) this.clientFactory.create(run, url, credentialsId);
         final Integer progressCheckInterval = Integer.parseInt(run.getEnvironment((taskListener)).get(BuildParameters.progressCheckInterval, String.valueOf(CHECK_PROGRESS_INTERVAL)));
 
         boolean success = perform(taskListener, progressCheckInterval);
