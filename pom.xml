@@ -16,8 +16,8 @@
         <jenkins.version>2.176.1</jenkins.version>
         <java.level>8</java.level>
     </properties>
-    <name>ServiceNow Plugin</name>
-    <description>Build steps integrated with ServiceNow API CI/CD</description>
+    <name>ServiceNow CI/CD Plugin</name>
+    <description>This plugin provides build steps for integration with ServiceNow using CI/CD APIs.</description>
     <licenses>
         <license>
             <name>MIT License</name>
