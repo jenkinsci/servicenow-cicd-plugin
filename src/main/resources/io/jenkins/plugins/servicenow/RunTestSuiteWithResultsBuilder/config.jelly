@@ -2,39 +2,56 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
          xmlns:t="/lib/hudson" xmlns:f="/lib/form">
     <f:entry title="${%TestSuiteName}" field="testSuiteName">
-        <f:textbox/>
+        <div tooltip="${%TestSuiteNameDescr}">
+            <f:textbox/>
+        </div>
     </f:entry>
     <f:entry title="${%TestSuiteSysId}" field="testSuiteSysId">
-        <f:textbox/>
+        <div tooltip="${%TestSuiteSysIdDescr}">
+            <f:textbox/>
+        </div>
     </f:entry>
     <f:entry title="${%OsName}" field="osName">
-        <f:textbox/>
+        <div tooltip="${%OsNameDescr}">
+            <f:textbox/>
+        </div>
     </f:entry>
     <f:entry title="${%OsVersion}" field="osVersion">
-        <f:textbox/>
+        <div tooltip="${%OsVersionDescr}">
+            <f:textbox/>
+        </div>
     </f:entry>
     <f:entry title="${%BrowserName}" field="browserName">
-        <f:textbox/>
+        <div tooltip="${%BrowserNameDescr}">
+            <f:textbox/>
+        </div>
     </f:entry>
     <f:entry title="${%BrowserVersion}" field="browserVersion">
-        <f:textbox/>
+        <div tooltip="${%BrowserVersionDescr}">
+            <f:textbox/>
+        </div>
     </f:entry>
     <f:entry title="${%ShowResults}" field="withResults">
-        <f:checkbox />
+        <div tooltip="${%ShowResultsDescr}">
+            <f:checkbox/>
+        </div>
     </f:entry>
     <f:advanced>
-        <f:entry title="${%Url}" field="url"
-                 description="${%UrlDescr}">
-            <f:textbox/>
+        <f:entry title="${%Url}" field="url">
+            <div tooltip="${%UrlDescr}">
+                <f:textbox/>
+            </div>
         </f:entry>
-        <f:entry title="${%Credentials}" field="credentialsId"
-                 description="${%CredentialsDescr}">
-            <f:textbox/>
+        <f:entry title="${%Credentials}" field="credentialsId">
+            <div tooltip="${%CredentialsDescr}">
+                <f:textbox/>
+            </div>
         </f:entry>
 
-        <f:entry title="${%ApiVersion}" field="apiVersion"
-                 description="${%ApiVersionDescr}">
-            <f:textbox/>
+        <f:entry title="${%ApiVersion}" field="apiVersion">
+            <div tooltip="${%ApiVersionDescr}">
+                <f:textbox/>
+            </div>
         </f:entry>
     </f:advanced>
 </j:jelly>
