@@ -23,7 +23,7 @@ public class RestClientFactory implements RunFactory<ServiceNowAPIClient> {
         ServiceNowAPIClient serviceNowAPIClient = null;
         if(usernamePasswordCredentials != null) {
             final Secret password = usernamePasswordCredentials.getPassword();
-            serviceNowAPIClient = new ServiceNowAPIClient(apiUrl, usernamePasswordCredentials.getUsername(), password.getPlainText());
+            serviceNowAPIClient = new ServiceNowAPIClient(apiUrl, usernamePasswordCredentials.getUsername(), password);
         }
         return serviceNowAPIClient;
     }

@@ -2,28 +2,32 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
          xmlns:t="/lib/hudson" xmlns:f="/lib/form">
     <f:advanced>
-        <f:entry title="${%Url}" field="url"
-                 description="${%UrlDescr}">
-            <f:textbox/>
+        <f:entry title="${%Url}" field="url">
+            <div tooltip="${%UrlDescr}">
+                <f:textbox/>
+            </div>
         </f:entry>
-        <f:entry title="${%Credentials}" field="credentialsId"
-                 description="${%CredentialsDescr}">
-            <f:textbox/>
+        <f:entry title="${%Credentials}" field="credentialsId">
+            <div tooltip="${%CredentialsDescr}">
+                <f:textbox/>
+            </div>
         </f:entry>
 
-        <f:entry title="${%ApiVersion}" field="apiVersion"
-                 description="${%ApiVersionDescr}">
-            <f:textbox/>
+        <f:entry title="${%ApiVersion}" field="apiVersion">
+            <div tooltip="${%ApiVersionDescr}"><f:textbox/></div>
         </f:entry>
         <f:entry title="${%AppScope}" field="appScope">
-            <f:textbox/>
+            <div tooltip="${%AppScopeDescr}">
+                <f:textbox/>
+            </div>
         </f:entry>
         <f:entry title="${%AppSysId}" field="appSysId">
-            <f:textbox/>
+            <div tooltip="${%AppSysIdDescr}">
+                <f:textbox/>
+            </div>
         </f:entry>
-        <f:entry title="${%BranchName}" field="branchName"
-                 description="${%BranchNameDescr}">
-            <f:textbox/>
+        <f:entry title="${%BranchName}" field="branchName">
+            <div tooltip="${%BranchNameDescr}"><f:textbox/></div>
         </f:entry>
     </f:advanced>
 </j:jelly>

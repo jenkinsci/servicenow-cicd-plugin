@@ -1,6 +1,7 @@
 package io.jenkins.plugins.servicenow.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import hudson.util.Secret;
 import io.jenkins.plugins.servicenow.api.model.Error;
 import io.jenkins.plugins.servicenow.api.model.JsonData;
 import io.jenkins.plugins.servicenow.api.model.Response;
@@ -43,7 +44,7 @@ public class ServiceNowAPIClient {
 
     private final String apiUrl;
     private final String username;
-    private final String password;
+    private final Secret password;
 
     private String lastActionProgressUrl;
 
@@ -68,7 +69,7 @@ public class ServiceNowAPIClient {
      * @param username User name used to authorize requests
      * @param password User password used for request authorization
      */
-    public ServiceNowAPIClient(final String url, final String username, final String password) {
+    public ServiceNowAPIClient(final String url, final String username, final Secret password) {
         if(StringUtils.isBlank(url) || !isURL(url)) {
             throw new IllegalArgumentException("Wrong 'url' parameter. Should not be empty and should be valid url string starting from the phrase: 'http(s)://'");
         }
@@ -313,7 +314,7 @@ public class ServiceNowAPIClient {
         CredentialsProvider provider = new BasicCredentialsProvider();
         provider.setCredentials(
                 AuthScope.ANY,
-                new UsernamePasswordCredentials(this.username, this.password)
+                new UsernamePasswordCredentials(this.username, this.password != null ? this.password.getPlainText() : StringUtils.EMPTY)
         );
         return provider;
     }
