@@ -1,4 +1,4 @@
-# ServiceNow CI/CD Plugin for Jenkins
+ServiceNow CI/CD Plugin for Jenkins
 ===================
 
 [![Documentation](https://img.shields.io/jenkins/plugin/v/servicenow-cicd.svg?label=Documentation)](https://plugins.jenkins.io/servicenow-cicd)
