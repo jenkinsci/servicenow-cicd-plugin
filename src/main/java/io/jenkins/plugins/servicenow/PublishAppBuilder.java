@@ -14,6 +14,7 @@ import io.jenkins.plugins.servicenow.api.ActionStatus;
 import io.jenkins.plugins.servicenow.api.ServiceNowApiException;
 import io.jenkins.plugins.servicenow.api.model.Result;
 import io.jenkins.plugins.servicenow.application.ApplicationVersion;
+import io.jenkins.plugins.servicenow.parameter.ServiceNowParameterDefinition;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -156,12 +157,35 @@ public class PublishAppBuilder extends ProgressBuilder {
     @Override
     protected void setupBuilderParameters(EnvVars environment) {
         super.setupBuilderParameters(environment);
+
+        // valid for version <= 0.92
         if(StringUtils.isBlank(this.appScope)) {
             this.appScope = environment.get(BuildParameters.appScope);
         }
         if(StringUtils.isBlank(this.appSysId)) {
             this.appSysId = environment.get(BuildParameters.appSysId);
         }
+
+        // valid for version > 0.92
+        if(getGlobalSNParams() != null) {
+            final String url = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.instanceForPublishedAppUrl);
+            if(StringUtils.isBlank(this.getUrl()) && StringUtils.isNotBlank(url)) {
+                this.setUrl(url);
+            }
+            final String credentialsId = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.credentialsForPublishedApp);
+            if(StringUtils.isBlank(this.getCredentialsId()) && StringUtils.isNotBlank(credentialsId)) {
+                this.setCredentialsId(credentialsId);
+            }
+            final String scope = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.appScope);
+            if(StringUtils.isBlank(this.appScope) && StringUtils.isNotBlank(scope)) {
+                this.appScope = scope;
+            }
+            final String sysId = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.sysId);
+            if(StringUtils.isBlank(this.appSysId) && StringUtils.isNotBlank(sysId)) {
+                this.appSysId = sysId;
+            }
+        }
+
         if(StringUtils.isBlank(this.appVersion)) {
             this.calculatedAppVersion = "1.0." + environment.get("BUILD_NUMBER");
         } else if(this.appVersion.split("\\.").length == 2) {
@@ -198,7 +222,11 @@ public class PublishAppBuilder extends ProgressBuilder {
     protected List<ParameterValue> setupParametersAfterBuildStep() {
         List<ParameterValue> parameters = new ArrayList<>();
         if(StringUtils.isNotBlank(this.calculatedAppVersion)) {
+            // valid for version <= 0.92
             parameters.add(new StringParameterValue(BuildParameters.publishedAppVersion, this.calculatedAppVersion));
+            // valid from version > 0.92
+            getGlobalSNParams().replace(ServiceNowParameterDefinition.PARAMS_NAMES.publishedAppVersion, this.calculatedAppVersion);
+            parameters.add(ServiceNowParameterDefinition.createFrom(getGlobalSNParams().toString()).createValue(null, getGlobalSNParams()));
             LOG.info("Store following published version to be installed: " + this.calculatedAppVersion);
         }
         return parameters;

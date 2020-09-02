@@ -11,7 +11,9 @@ import hudson.tasks.Builder;
 import io.jenkins.plugins.servicenow.api.ActionStatus;
 import io.jenkins.plugins.servicenow.api.ServiceNowAPIClient;
 import io.jenkins.plugins.servicenow.api.model.Result;
+import io.jenkins.plugins.servicenow.parameter.ServiceNowParameterDefinition;
 import jenkins.tasks.SimpleBuildStep;
+import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.springframework.util.StopWatch;
@@ -32,6 +34,8 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
     private String url;
     private String credentialsId;
     private String apiVersion;
+
+    private JSONObject globalSNParams;
 
     private RunFactory clientFactory;
     /**
@@ -70,6 +74,10 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
 
     public String getApiVersion() {
         return apiVersion;
+    }
+
+    public JSONObject getGlobalSNParams() {
+        return globalSNParams;
     }
 
     public RunFactory getClientFactory() {
@@ -128,6 +136,11 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
     protected abstract boolean perform(@Nonnull final TaskListener taskListener, final Integer progressCheckInterval);
 
     protected void setupBuilderParameters(EnvVars environment) {
+        final String globalSNParams = environment.get(ServiceNowParameterDefinition.PARAMETER_NAME);
+        if(StringUtils.isNotBlank(globalSNParams)) {
+            this.globalSNParams = JSONObject.fromObject(globalSNParams);
+        }
+        // there are older parameters below valid for the plugin version <= 0.92 (they stay for compatibility purpose)
         if(StringUtils.isBlank(this.url)) {
             this.url = environment.get(BuildParameters.instanceUrl);
         }

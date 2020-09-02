@@ -1,5 +1,6 @@
 package io.jenkins.plugins.servicenow;
 
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.model.AbstractProject;
 import hudson.model.TaskListener;
@@ -10,6 +11,7 @@ import io.jenkins.plugins.servicenow.api.ActionStatus;
 import io.jenkins.plugins.servicenow.api.ResponseUnboundParameters;
 import io.jenkins.plugins.servicenow.api.ServiceNowApiException;
 import io.jenkins.plugins.servicenow.api.model.Result;
+import io.jenkins.plugins.servicenow.parameter.ServiceNowParameterDefinition;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -166,6 +168,22 @@ public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
         }
 
         return result;
+    }
+
+    @Override
+    protected void setupBuilderParameters(EnvVars environment) {
+        super.setupBuilderParameters(environment);
+
+        if(getGlobalSNParams() != null) {
+            final String url = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.instanceForInstalledAppUrl);
+            if(StringUtils.isBlank(this.getUrl()) && StringUtils.isNotBlank(url)) {
+                this.setUrl(url);
+            }
+            final String credentialsId = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.credentialsForInstalledApp);
+            if(StringUtils.isBlank(this.getCredentialsId()) && StringUtils.isNotBlank(credentialsId)) {
+                this.setCredentialsId(credentialsId);
+            }
+        }
     }
 
     private boolean generateTestResult(@Nonnull TaskListener taskListener, final Result serviceNowResult) {

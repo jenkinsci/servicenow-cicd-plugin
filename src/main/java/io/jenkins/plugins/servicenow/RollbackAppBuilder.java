@@ -10,6 +10,7 @@ import hudson.util.FormValidation;
 import io.jenkins.plugins.servicenow.api.ActionStatus;
 import io.jenkins.plugins.servicenow.api.ServiceNowApiException;
 import io.jenkins.plugins.servicenow.api.model.Result;
+import io.jenkins.plugins.servicenow.parameter.ServiceNowParameterDefinition;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -137,6 +138,8 @@ public class RollbackAppBuilder extends ProgressBuilder {
     @Override
     protected void setupBuilderParameters(EnvVars environment) {
         super.setupBuilderParameters(environment);
+
+        // valid for version <= 0.92
         if(StringUtils.isBlank(this.appScope)) {
             this.appScope = environment.get(BuildParameters.appScope);
         }
@@ -145,6 +148,30 @@ public class RollbackAppBuilder extends ProgressBuilder {
         }
         if(StringUtils.isBlank(this.rollbackAppVersion)) {
             this.rollbackAppVersion = environment.get(BuildParameters.rollbackAppVersion);
+        }
+
+        // valid for version > 0.92
+        if(getGlobalSNParams() != null) {
+            final String url = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.instanceForInstalledAppUrl);
+            if(StringUtils.isBlank(this.getUrl()) && StringUtils.isNotBlank(url)) {
+                this.setUrl(url);
+            }
+            final String credentialsId = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.credentialsForInstalledApp);
+            if(StringUtils.isBlank(this.getCredentialsId()) && StringUtils.isNotBlank(credentialsId)) {
+                this.setCredentialsId(credentialsId);
+            }
+            final String scope = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.appScope);
+            if(StringUtils.isBlank(this.appScope) && StringUtils.isNotBlank(scope)) {
+                this.appScope = scope;
+            }
+            final String sysId = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.sysId);
+            if(StringUtils.isBlank(this.appSysId) && StringUtils.isNotBlank(sysId)) {
+                this.appSysId = sysId;
+            }
+            final String appVersion = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.rollbackAppVersion);
+            if(StringUtils.isBlank(this.rollbackAppVersion) && StringUtils.isNotBlank(appVersion)) {
+                this.rollbackAppVersion = appVersion;
+            }
         }
     }
 
