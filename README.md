@@ -51,11 +51,25 @@ There is available a bunch of configuration together with the build step:
 __Url__ | ServiceNow instance url, where an application will be published
 __Credentials__ | User name and password defined in global credentials and configured in Jenkins (credentials ID is required here)
 __API version__ | Optional. Version of the endpoint to access. For example, v1 or v2. Only specify this value to use an endpoint version other than the latest.
-... | TODO ...
+__Application scope__ | Required if *Application system id* is not specified. The scope name of the application for which to apply the changes, such as `x_aah_custom_app`. You can locate this value in the scope field in the Custom Application [sys_app] table.
+__Application system id__ | Required if `Application scope` is not specified. The system id of the application for which to apply the changes. You can locate this value in the Sys ID field in the Custom Application [sys_app] table.
+__Branch name__ | Name of the branch in the source control system from which to acquire the application.
+
 ![Apply changes](doc/apply-changes.png)
 
 #### SN: Publish application
 Publishes the specified application and all of its artifacts to the application repository.
+
+&nbsp; | Description
+------| ------------
+__Url__ | ServiceNow instance url, where an application will be published
+__Credentials__ | User name and password defined in global credentials and configured in Jenkins (credentials ID is required here)
+__API version__ | Optional. Version of the endpoint to access. For example, v1 or v2. Only specify this value to use an endpoint version other than the latest.
+__Application scope__ | Required if *Application system id* is not specified. The scope name of the application for which to apply the changes, such as `x_aah_custom_app`. You can locate this value in the scope field in the Custom Application [sys_app] table.
+__Application system id__ | Required if `Application scope` is not specified. The system id of the application for which to apply the changes. You can locate this value in the Sys ID field in the Custom Application [sys_app] table.
+__Branch name__ | Name of the branch in the source control system from which to acquire the application.
+
+
 ![Publish application](doc/publish-application.png)
 
 #### SN: Install application
