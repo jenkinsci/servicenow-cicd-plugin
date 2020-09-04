@@ -192,8 +192,10 @@ public class InstallAppBuilder extends ProgressBuilder {
             // valid for version <= 0.92
             parameters.add(new StringParameterValue(BuildParameters.rollbackAppVersion, this.rollbackAppVersion));
             // valid from version > 0.92
-            getGlobalSNParams().replace(PARAMS_NAMES.rollbackAppVersion, this.rollbackAppVersion);
-            parameters.add(ServiceNowParameterDefinition.createFrom(getGlobalSNParams().toString()).createValue(null, getGlobalSNParams()));
+            if(getGlobalSNParams() != null) {
+                getGlobalSNParams().replace(PARAMS_NAMES.rollbackAppVersion, this.rollbackAppVersion);
+                parameters.add(ServiceNowParameterDefinition.createFrom(getGlobalSNParams().toString()).createValue(null, getGlobalSNParams()));
+            }
             LOG.info("Store following rollback version in case of tests failure: " + this.rollbackAppVersion);
         }
 

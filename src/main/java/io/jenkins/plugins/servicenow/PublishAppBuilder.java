@@ -225,8 +225,10 @@ public class PublishAppBuilder extends ProgressBuilder {
             // valid for version <= 0.92
             parameters.add(new StringParameterValue(BuildParameters.publishedAppVersion, this.calculatedAppVersion));
             // valid from version > 0.92
-            getGlobalSNParams().replace(ServiceNowParameterDefinition.PARAMS_NAMES.publishedAppVersion, this.calculatedAppVersion);
-            parameters.add(ServiceNowParameterDefinition.createFrom(getGlobalSNParams().toString()).createValue(null, getGlobalSNParams()));
+            if(getGlobalSNParams() != null) {
+                getGlobalSNParams().replace(ServiceNowParameterDefinition.PARAMS_NAMES.publishedAppVersion, this.calculatedAppVersion);
+                parameters.add(ServiceNowParameterDefinition.createFrom(getGlobalSNParams().toString()).createValue(null, getGlobalSNParams()));
+            }
             LOG.info("Store following published version to be installed: " + this.calculatedAppVersion);
         }
         return parameters;
