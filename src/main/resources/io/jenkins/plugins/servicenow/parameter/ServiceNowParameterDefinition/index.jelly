@@ -2,20 +2,22 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define"
          xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form"
          xmlns:i="jelly:fmt" xmlns:p="/lib/hudson/project">
-    <f:entry description="${it.description}">
+    <f:entry title="${%SNParamsTitle}" description="${it.description}">
         <div name="parameter" description="${it.description}">
             <input type="hidden" name="name" value="${it.name}" />
             <j:scope>
+                <p>
                 <table>
-                    <tr><td>Credentials for publishing instance: </td><td width="70%"><f:textbox field="credentialsForPublishedApp" value="${it.credentialsForPublishedApp}"/></td></tr>
-                    <tr><td>Publishing instance: </td><td><f:textbox field="instanceForPublishedAppUrl" value="${it.instanceForPublishedAppUrl}"/></td></tr>
-                    <tr><td>Credentials for installation instance: </td><td><f:textbox field="credentialsForInstalledApp" value="${it.credentialsForInstalledApp}"/></td></tr>
-                    <tr><td>Installation instance: </td><td><f:textbox field="instanceForInstalledAppUrl" value="${it.instanceForInstalledAppUrl}"/></td></tr>
-                    <tr><td>System ID: </td><td><f:textbox field="sysId" value="${it.sysId}"/></td></tr>
-                    <tr><td>Application scope: </td><td><f:textbox field="appScope" value="${it.appScope}"/></td></tr>
-                    <tr><td>Published application version: </td><td><f:textbox field="publishedAppVersion" value="${it.publishedAppVersion}"/></td></tr>
-                    <tr><td>Rolled back application version: </td><td><f:textbox field="rollbackAppVersion" value="${it.rollbackAppVersion}"/></td></tr>
+                    <tr><td>${%CredentialsForPublishedApp}</td><td style="width: 70%;"><div tooltip="${%CredentialsForPublishedAppDescr}"><f:textbox field="credentialsForPublishedApp" value="${it.credentialsForPublishedApp}"/></div></td></tr>
+                    <tr><td>${%InstanceForPublishedAppUrl}</td><td><div tooltip="${%InstanceForPublishedAppUrlDescr}"><f:textbox field="instanceForPublishedAppUrl" value="${it.instanceForPublishedAppUrl}"/></div></td></tr>
+                    <tr><td>${%CredentialsForInstalledApp}</td><td><div tooltip="${%CredentialsForInstalledAppDescr}"><f:textbox field="credentialsForInstalledApp" value="${it.credentialsForInstalledApp}"/></div></td></tr>
+                    <tr><td>${%InstanceForInstalledAppUrl}</td><td><div tooltip="${%InstanceForInstalledAppUrlDescr}"><f:textbox field="instanceForInstalledAppUrl" value="${it.instanceForInstalledAppUrl}"/></div></td></tr>
+                    <tr><td>${%SysId}</td><td><div tooltip="${%SysIdDescr}"><f:textbox field="sysId" value="${it.sysId}"/></div></td></tr>
+                    <tr><td>${%AppScope}</td><td><div tooltip="${%AppScopeDescr}"><f:textbox field="appScope" value="${it.appScope}"/></div></td></tr>
+                    <tr><td>${%PublishedAppVersion}</td><td><div tooltip="${%PublishedAppVersionDescr}"><f:textbox field="publishedAppVersion" value="${it.publishedAppVersion}"/></div></td></tr>
+                    <tr><td>${%RollbackAppVersion}</td><td><div tooltip="${%RollbackAppVersionDescr}"><f:textbox field="rollbackAppVersion" value="${it.rollbackAppVersion}"/></div></td></tr>
                 </table>
+                </p>
             </j:scope>
         </div>
     </f:entry>

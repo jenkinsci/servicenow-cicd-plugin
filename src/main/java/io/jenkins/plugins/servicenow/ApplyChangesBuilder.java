@@ -11,6 +11,7 @@ import io.jenkins.plugins.servicenow.api.ActionStatus;
 import io.jenkins.plugins.servicenow.api.ServiceNowApiException;
 import io.jenkins.plugins.servicenow.api.model.Result;
 import io.jenkins.plugins.servicenow.parameter.ServiceNowParameterDefinition;
+import io.jenkins.plugins.servicenow.utils.Validator;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -155,12 +156,13 @@ public class ApplyChangesBuilder extends ProgressBuilder {
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
-        public FormValidation doCheckName(@QueryParameter String url)
+        public FormValidation doCheckUrl(@QueryParameter String value)
                 throws IOException, ServletException {
 
-            final String regex = "^https?://.+";
-            if(url.matches(regex)) {
-                return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
+            if(StringUtils.isNotBlank(value)) {
+                if(!Validator.validateInstanceUrl(value)) {
+                    return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
+                }
             }
             return FormValidation.ok();
         }

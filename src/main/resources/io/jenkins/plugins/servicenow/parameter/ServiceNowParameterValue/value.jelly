@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:l="/lib/layout">
+	<f:entry title="${%CredentialsForPublishedApp}">${it.credentialsForPublishedApp}</f:entry>
+	<f:entry title="${%InstanceForPublishedAppUrl}">${it.instanceForPublishedAppUrl}</f:entry>
+	<f:entry title="${%CredentialsForInstalledApp}">${it.credentialsForInstalledApp}</f:entry>
+	<f:entry title="${%InstanceForInstalledAppUrl}">${it.instanceForInstalledAppUrl}</f:entry>
+	<f:entry title="${%SysId}">${it.sysId}</f:entry>
+	<f:entry title="${%AppScope}">${it.appScope}</f:entry>
+	<f:entry title="${%PublishedAppVersion}">${it.publishedAppVersion}</f:entry>
+	<f:entry title="${%RollbackAppVersion}">${it.rollbackAppVersion}</f:entry>
+	<f:entry title="${%Description}">${it.description}</f:entry>
+</j:jelly>

@@ -3,11 +3,18 @@ package io.jenkins.plugins.servicenow.parameter;
 import hudson.Extension;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
+import hudson.util.FormValidation;
 import io.jenkins.plugins.servicenow.Messages;
+import io.jenkins.plugins.servicenow.utils.Validator;
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+
+import javax.servlet.ServletException;
+import java.io.IOException;
 
 public class ServiceNowParameterDefinition extends ParameterDefinition implements Comparable<ServiceNowParameterDefinition> {
 
@@ -68,8 +75,14 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
         return rollbackAppVersion;
     }
 
+    // Override the standard constructor
     public ServiceNowParameterDefinition(String name) {
-        super(name);
+        super(PARAMETER_NAME);
+    }
+
+    // Override the standard constructor
+    public ServiceNowParameterDefinition(String name, String description) {
+        super(PARAMETER_NAME, description);
     }
 
     @DataBoundConstructor
@@ -87,15 +100,6 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
         this.rollbackAppVersion = rollbackAppVersion;
     }
 
-    @Extension
-    @Symbol(PARAMETER_NAME)
-    public static class DescriptorImpl extends ParameterDescriptor {
-        @Override
-        public String getDisplayName() {
-            return Messages.ServiceNowParameterDefinition_DescriptorImpl_DisplayName();
-        }
-    }
-
     @Override
     public ParameterValue createValue(StaplerRequest staplerRequest, JSONObject jsonObject) {
         ServiceNowParameterValue snParameterValue = new ServiceNowParameterValue(jsonObject.getString("name"),
@@ -105,7 +109,9 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
 
     @Override
     public ParameterValue createValue(StaplerRequest staplerRequest) {
-        return null;
+        ServiceNowParameterValue snParameterValue = new ServiceNowParameterValue(PARAMETER_NAME,
+                "{\"publishedAppVersion\":\"\", \"rollbackAppVersion\":\"\"}"); // create parameter with fields that are used between build steps
+        return snParameterValue;
     }
 
     public static ServiceNowParameterDefinition createFrom(final String value) {
@@ -121,6 +127,37 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
                 (String) o.get(PARAMS_NAMES.publishedAppVersion),
                 (String) o.get(PARAMS_NAMES.rollbackAppVersion)
         );
+    }
+
+    @Extension
+    @Symbol(PARAMETER_NAME)
+    public static class DescriptorImpl extends ParameterDescriptor {
+        @Override
+        public String getDisplayName() {
+            return Messages.ServiceNowParameterDefinition_DescriptorImpl_DisplayName();
+        }
+
+        public FormValidation doCheckInstanceForPublishedAppUrl(@QueryParameter String value)
+                throws IOException, ServletException {
+
+            if(StringUtils.isNotBlank(value)) {
+                if(!Validator.validateInstanceUrl(value)) {
+                    return FormValidation.error(Messages.ServiceNowParameterDefinition_DescriptorImpl_errors_wrongInstanceForPublishedAppUrl());
+                }
+            }
+            return FormValidation.ok();
+        }
+
+        public FormValidation doCheckInstanceForInstalledAppUrl(@QueryParameter String value)
+                throws IOException, ServletException {
+
+            if(StringUtils.isNotBlank(value)) {
+                if(!Validator.validateInstanceUrl(value)) {
+                    return FormValidation.error(Messages.ServiceNowParameterDefinition_DescriptorImpl_errors_wrongInstanceForInstalledAppUrl());
+                }
+            }
+            return FormValidation.ok();
+        }
     }
 
     @Override
