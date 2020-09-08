@@ -129,6 +129,11 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
         );
     }
 
+    @Override
+    public DescriptorImpl getDescriptor() {
+        return (DescriptorImpl) super.getDescriptor();
+    }
+
     @Extension
     @Symbol(PARAMETER_NAME)
     public static class DescriptorImpl extends ParameterDescriptor {

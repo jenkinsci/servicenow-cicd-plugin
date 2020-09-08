@@ -1,5 +1,7 @@
 package io.jenkins.plugins.servicenow.utils;
 
+import org.apache.commons.lang.StringUtils;
+
 /**
  * Validator class to validate content of fields used by different components of the plugin.
  */
@@ -12,7 +14,7 @@ public class Validator {
      */
     public static boolean validateInstanceUrl(String instanceUrl) {
         final String regex = "^https?://.+";
-        if(instanceUrl != null && !instanceUrl.matches(regex)) {
+        if(StringUtils.isNotBlank(instanceUrl) && !instanceUrl.matches(regex)) {
             return false;
         }
 

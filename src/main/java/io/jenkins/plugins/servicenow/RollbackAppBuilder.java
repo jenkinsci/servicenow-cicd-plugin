@@ -69,7 +69,7 @@ public class RollbackAppBuilder extends ProgressBuilder {
         boolean result = false;
 
         taskListener.getLogger().println("\nSTART: ServiceNow - Roll back the specified application (downgrade version: " + this.rollbackAppVersion + ")");
-        if(StringUtils.isBlank(this.rollbackAppVersion)) {
+        if(StringUtils.isBlank(this.rollbackAppVersion) && getGlobalSNParams() == null) {
             taskListener.getLogger().println("WARNING: Parameter '" + BuildParameters.rollbackAppVersion + "' is empty.\n" +
                     "Probably the build will fail! Following reason can be:\n" +
                     "1) the step 'install application' was not launched before,\n" +

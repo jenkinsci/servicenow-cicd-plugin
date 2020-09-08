@@ -82,7 +82,7 @@ public class InstallAppBuilder extends ProgressBuilder {
         boolean result = false;
 
         taskListener.getLogger().println("\nSTART: ServiceNow - Install the specified application (version: " + Optional.ofNullable(this.appVersionToInstall).orElse("the latest") + ")");
-        if(StringUtils.isBlank(this.appVersionToInstall)) {
+        if(StringUtils.isBlank(this.appVersionToInstall) && getGlobalSNParams() == null) {
             taskListener.getLogger().println("WARNING: Parameter '" + BuildParameters.publishedAppVersion + "' is empty.\n" +
                     "Probably the build will fail! Following reason can be:\n" +
                     "1) the step 'publish application' was not launched before,\n" +
