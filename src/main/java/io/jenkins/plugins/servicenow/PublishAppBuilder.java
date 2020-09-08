@@ -184,6 +184,10 @@ public class PublishAppBuilder extends ProgressBuilder {
             if(StringUtils.isBlank(this.appSysId) && StringUtils.isNotBlank(sysId)) {
                 this.appSysId = sysId;
             }
+            final String appVersion = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.publishedAppVersion);
+            if(StringUtils.isBlank(this.appVersion) && StringUtils.isNotBlank(appVersion)) {
+                this.calculatedAppVersion = appVersion;
+            }
         }
 
         if(StringUtils.isBlank(this.appVersion)) {
@@ -234,30 +238,30 @@ public class PublishAppBuilder extends ProgressBuilder {
         return parameters;
     }
 
-@Symbol("snPublishApp")
-@Extension
-public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
+    @Symbol("snPublishApp")
+    @Extension
+    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
-    public FormValidation doCheckName(@QueryParameter String url)
-            throws IOException, ServletException {
+        public FormValidation doCheckName(@QueryParameter String url)
+                throws IOException, ServletException {
 
-        final String regex = "^https?://.+";
-        if(url.matches(regex)) {
-            return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
+            final String regex = "^https?://.+";
+            if(url.matches(regex)) {
+                return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
+            }
+            return FormValidation.ok();
         }
-        return FormValidation.ok();
+
+        @Override
+        public boolean isApplicable(Class<? extends AbstractProject> aClass) {
+            return true;
+        }
+
+
+        @Override
+        public String getDisplayName() {
+            return Messages.PublishAppBuilder_DescriptorImpl_DisplayName();
+        }
+
     }
-
-    @Override
-    public boolean isApplicable(Class<? extends AbstractProject> aClass) {
-        return true;
-    }
-
-
-    @Override
-    public String getDisplayName() {
-        return Messages.PublishAppBuilder_DescriptorImpl_DisplayName();
-    }
-
-}
 }
