@@ -26,8 +26,6 @@ import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
-import javax.servlet.ServletException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -252,8 +250,8 @@ public class PublishAppBuilder extends ProgressBuilder {
             return FormValidation.ok();
         }
 
-        public FormValidation doCheckObtainVersionFromSC(@QueryParameter Boolean value) {
-            if(value) {
+        public FormValidation doCheckObtainVersionFromSC(@QueryParameter Boolean value, @QueryParameter("servicenow_appVersion") String appVersion) {
+            if(value && StringUtils.isNotBlank(appVersion)) {
                 return FormValidation.warning(Messages.PublishAppBuilder_DescriptorImpl_warnings_obtainVersionFromSC());
             }
             return FormValidation.ok();

@@ -15,6 +15,7 @@ import io.jenkins.plugins.servicenow.api.ServiceNowApiException;
 import io.jenkins.plugins.servicenow.api.model.Result;
 import io.jenkins.plugins.servicenow.parameter.ServiceNowParameterDefinition;
 import io.jenkins.plugins.servicenow.parameter.ServiceNowParameterDefinition.PARAMS_NAMES;
+import io.jenkins.plugins.servicenow.utils.Validator;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -24,8 +25,6 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nonnull;
-import javax.servlet.ServletException;
-import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
@@ -206,12 +205,11 @@ public class InstallAppBuilder extends ProgressBuilder {
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
-        public FormValidation doCheckName(@QueryParameter String url)
-                throws IOException, ServletException {
-
-            final String regex = "^https?://.+";
-            if(url.matches(regex)) {
-                return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
+        public FormValidation doCheckUrl(@QueryParameter String value) {
+            if(StringUtils.isNotBlank(value)) {
+                if(!Validator.validateInstanceUrl(value)) {
+                    return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
+                }
             }
             return FormValidation.ok();
         }

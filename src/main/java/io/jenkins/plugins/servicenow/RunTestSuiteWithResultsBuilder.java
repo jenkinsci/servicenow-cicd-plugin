@@ -12,6 +12,7 @@ import io.jenkins.plugins.servicenow.api.ResponseUnboundParameters;
 import io.jenkins.plugins.servicenow.api.ServiceNowApiException;
 import io.jenkins.plugins.servicenow.api.model.Result;
 import io.jenkins.plugins.servicenow.parameter.ServiceNowParameterDefinition;
+import io.jenkins.plugins.servicenow.utils.Validator;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -21,8 +22,6 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nonnull;
-import javax.servlet.ServletException;
-import java.io.IOException;
 import java.text.MessageFormat;
 
 public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
@@ -119,7 +118,7 @@ public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
     protected boolean perform(@Nonnull final TaskListener taskListener, final Integer progressCheckInterval) {
         boolean result = false;
 
-        taskListener.getLogger().format("%nSTART: ServiceNow - Run test suite '%s' [%s]",this.getTestSuiteName(), this.getTestSuiteSysId());
+        taskListener.getLogger().format("%nSTART: ServiceNow - Run test suite '%s' [%s]", this.getTestSuiteName(), this.getTestSuiteSysId());
 
         Result serviceNowResult = null;
         try {
@@ -246,12 +245,11 @@ public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
-        public FormValidation doCheckName(@QueryParameter("url") String url)
-                throws IOException, ServletException {
-
-            final String regex = "^https?://.+";
-            if(url.matches(regex)) {
-                return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
+        public FormValidation doCheckUrl(@QueryParameter String value) {
+            if(StringUtils.isNotBlank(value)) {
+                if(!Validator.validateInstanceUrl(value)) {
+                    return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
+                }
             }
             return FormValidation.ok();
         }
@@ -260,7 +258,6 @@ public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
         public boolean isApplicable(Class<? extends AbstractProject> aClass) {
             return true;
         }
-
 
         @Override
         public String getDisplayName() {

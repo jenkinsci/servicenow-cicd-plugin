@@ -21,8 +21,6 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nonnull;
-import javax.servlet.ServletException;
-import java.io.IOException;
 import java.net.UnknownHostException;
 
 public class ApplyChangesBuilder extends ProgressBuilder {
@@ -156,9 +154,7 @@ public class ApplyChangesBuilder extends ProgressBuilder {
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
-        public FormValidation doCheckUrl(@QueryParameter String value)
-                throws IOException, ServletException {
-
+        public FormValidation doCheckUrl(@QueryParameter String value) {
             if(StringUtils.isNotBlank(value)) {
                 if(!Validator.validateInstanceUrl(value)) {
                     return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
