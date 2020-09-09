@@ -3,12 +3,12 @@
          xmlns:t="/lib/hudson" xmlns:f="/lib/form">
     <f:entry title="${%Version}" field="appVersion">
         <div tooltip="${%VersionDescr}">
-            <f:textbox/>
+            <f:textbox name="servicenow_appVersion"/>
         </div>
     </f:entry>
     <f:entry title="${%GetVersionFromSC}" field="obtainVersionFromSC">
         <div tooltip="${%GetVersionFromSCDescr}">
-            <f:checkbox/>
+            <f:checkbox onclick="javascript: if(this.checked) document.getElementsByName('servicenow_appVersion')[0].disabled='disabled'; else document.getElementsByName('servicenow_appVersion')[0].disabled=null;"/>
         </div>
     </f:entry>
     <f:advanced>
