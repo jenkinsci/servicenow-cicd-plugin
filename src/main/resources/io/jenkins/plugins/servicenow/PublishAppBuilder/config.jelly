@@ -2,46 +2,31 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
          xmlns:t="/lib/hudson" xmlns:f="/lib/form">
     <f:entry title="${%Version}" field="appVersion">
-        <div tooltip="${%VersionDescr}">
-            <f:textbox name="servicenow_appVersion"/>
-        </div>
+        <f:textbox name="servicenow_appVersion"/>
     </f:entry>
     <f:entry title="${%GetVersionFromSC}" field="obtainVersionFromSC">
-        <div tooltip="${%GetVersionFromSCDescr}">
-            <f:checkbox onclick="javascript: if(this.checked) document.getElementsByName('servicenow_appVersion')[0].disabled='disabled'; else document.getElementsByName('servicenow_appVersion')[0].disabled=null;"/>
-        </div>
+        <f:checkbox
+                onclick="javascript: if(this.checked) document.getElementsByName('servicenow_appVersion')[0].disabled='disabled'; else document.getElementsByName('servicenow_appVersion')[0].disabled=null;"/>
     </f:entry>
     <f:advanced>
         <f:entry title="${%Url}" field="url">
-            <div tooltip="${%UrlDescr}">
-                <f:textbox/>
-            </div>
+            <f:textbox/>
         </f:entry>
         <f:entry title="${%Credentials}" field="credentialsId">
-            <div tooltip="${%CredentialsDescr}">
-                <f:textbox/>
-            </div>
+            <f:textbox/>
         </f:entry>
 
         <f:entry title="${%ApiVersion}" field="apiVersion">
-            <div tooltip="${%ApiVersionDescr}">
-                <f:textbox/>
-            </div>
+            <f:textbox/>
         </f:entry>
         <f:entry title="${%AppScope}" field="appScope">
-            <div tooltip="${%AppScopeDescr}">
-                <f:textbox/>
-            </div>
+            <f:textbox/>
         </f:entry>
         <f:entry title="${%AppSysId}" field="appSysId">
-            <div tooltip="${%AppSysIdDescr}">
-                <f:textbox/>
-            </div>
+            <f:textbox/>
         </f:entry>
         <f:entry title="${%DevNotes}" field="devNotes">
-            <div tooltip="${%DevNotesDescr}">
-                <f:textbox/>
-            </div>
+            <f:textbox/>
         </f:entry>
     </f:advanced>
 </j:jelly>
