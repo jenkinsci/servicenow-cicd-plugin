@@ -113,6 +113,7 @@ public class ApplyChangesBuilder extends ProgressBuilder {
         }  catch (UnknownHostException ex) {
             taskListener.getLogger().println("Check connection: " + ex.getMessage());
         } catch(Exception ex) {
+            LOG.error(ex.getMessage(), ex);
             taskListener.getLogger().println(ex.getMessage());
         }
 

@@ -14,6 +14,7 @@ import io.jenkins.plugins.servicenow.api.model.Result;
 import io.jenkins.plugins.servicenow.parameter.ServiceNowParameterDefinition;
 import jenkins.tasks.SimpleBuildStep;
 import net.sf.json.JSONObject;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.springframework.util.StopWatch;
@@ -124,9 +125,12 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
         String time = String.format("%02d:%02d:%02d.%d", hour, minute, second, millis);
         taskListener.getLogger().println(String.format("Elapsed Time: %s ([%f] seconds)", time, stopWatch.getTotalTimeSeconds()));
 
+
         List<ParameterValue> buildVariablesForNextSteps = this.setupParametersAfterBuildStep();
-        ParametersAction newAction = run.getAction(ParametersAction.class).createUpdated(buildVariablesForNextSteps);
-        run.addOrReplaceAction(newAction);
+        if(run.getAction(ParametersAction.class) != null && CollectionUtils.isNotEmpty(buildVariablesForNextSteps)) {
+            ParametersAction newAction = run.getAction(ParametersAction.class).createUpdated(buildVariablesForNextSteps);
+            run.addOrReplaceAction(newAction);
+        }
 
         if(!success) {
             throw new AbortException("Build Failed");

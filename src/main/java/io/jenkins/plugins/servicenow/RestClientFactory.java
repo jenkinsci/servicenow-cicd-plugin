@@ -6,6 +6,7 @@ import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import hudson.model.Run;
 import hudson.util.Secret;
 import io.jenkins.plugins.servicenow.api.ServiceNowAPIClient;
+import org.apache.commons.lang.StringUtils;
 
 public class RestClientFactory implements RunFactory<ServiceNowAPIClient> {
 
@@ -24,6 +25,8 @@ public class RestClientFactory implements RunFactory<ServiceNowAPIClient> {
         if(usernamePasswordCredentials != null) {
             final Secret password = usernamePasswordCredentials.getPassword();
             serviceNowAPIClient = new ServiceNowAPIClient(apiUrl, usernamePasswordCredentials.getUsername(), password);
+        } else if (StringUtils.isNotBlank(credentialsId)){
+            throw new IllegalArgumentException("Following credentials were not found! [ID=" + credentialsId + "]");
         }
         return serviceNowAPIClient;
     }
