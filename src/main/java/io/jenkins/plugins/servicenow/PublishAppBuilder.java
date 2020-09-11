@@ -250,7 +250,7 @@ public class PublishAppBuilder extends ProgressBuilder {
             return FormValidation.ok();
         }
 
-        public FormValidation doCheckObtainVersionFromSC(@QueryParameter Boolean value, @QueryParameter("servicenow_appVersion") String appVersion) {
+        public FormValidation doCheckObtainVersionFromSC(@QueryParameter Boolean value, @QueryParameter("appVersion") String appVersion) {
             if(value && StringUtils.isNotBlank(appVersion)) {
                 return FormValidation.warning(Messages.PublishAppBuilder_DescriptorImpl_warnings_obtainVersionFromSC());
             }
