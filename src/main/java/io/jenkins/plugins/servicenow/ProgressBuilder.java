@@ -27,11 +27,6 @@ import java.util.List;
 
 public abstract class ProgressBuilder extends Builder implements SimpleBuildStep {
 
-    /**
-     * Interval in milliseconds between next progress check (ServiceNow API call).
-     */
-    private static final int CHECK_PROGRESS_INTERVAL = 5000;
-
     private String url;
     private String credentialsId;
     private String apiVersion;
@@ -106,12 +101,12 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
 
         setupBuilderParameters(run.getEnvironment(taskListener));
 
-        if (this.clientFactory == null) {
+        if(this.clientFactory == null) {
             Guice.createInjector(new ServiceNowModule()).injectMembers(this);
         }
 
         this.restClient = (ServiceNowAPIClient) this.clientFactory.create(run, url, credentialsId);
-        final Integer progressCheckInterval = Integer.parseInt(run.getEnvironment((taskListener)).get(BuildParameters.progressCheckInterval, String.valueOf(CHECK_PROGRESS_INTERVAL)));
+        final Integer progressCheckInterval = retrieveProgressCheckIntervalParameter(run.getEnvironment((taskListener)));
 
         boolean success = perform(taskListener, progressCheckInterval);
 
@@ -135,6 +130,18 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
         if(!success) {
             throw new AbortException("Build Failed");
         }
+    }
+
+    private int retrieveProgressCheckIntervalParameter(EnvVars environment) {
+        Integer parameter = null;
+        try {
+            parameter = getGlobalSNParams() != null && StringUtils.isNotBlank(getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.progressCheckInterval)) ?
+                    getGlobalSNParams().getInt(ServiceNowParameterDefinition.PARAMS_NAMES.progressCheckInterval) :
+                    Integer.parseInt(environment.get(BuildParameters.progressCheckInterval));
+        } catch(NumberFormatException ex) {
+        }
+
+        return parameter == null ? Constants.PROGRESS_CHECK_INTERVAL : parameter.intValue();
     }
 
     protected abstract boolean perform(@Nonnull final TaskListener taskListener, final Integer progressCheckInterval);
@@ -188,7 +195,7 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
         if(StringUtils.isNotBlank(serviceNowResult.getStatusMessage())) {
             errorDetail.append(serviceNowResult.getStatusMessage()).append(". ");
         }
-        if (StringUtils.isNotBlank(serviceNowResult.getStatusDetail())) {
+        if(StringUtils.isNotBlank(serviceNowResult.getStatusDetail())) {
             errorDetail.append("(").append(serviceNowResult.getStatusDetail()).append(") ");
         }
         if(StringUtils.isNotBlank(serviceNowResult.getError())) {
@@ -199,8 +206,9 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
 
     /**
      * Get value from additional response attribute that was strictly not implemented by current structure of the response object.
+     *
      * @param result Result returned by ServiceNow API and taken from the response object.
-     * @param name Name of the attribute that should occur in the response
+     * @param name   Name of the attribute that should occur in the response
      * @return Value of the attribute
      */
     protected Object getValue(final Result result, final String name) {

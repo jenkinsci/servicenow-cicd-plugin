@@ -55,6 +55,7 @@ public class ServiceNowParameterDefinitionTest extends TestCase {
         checkParameter(result, ServiceNowParameterDefinition.PARAMS_NAMES.publishedAppVersion, TestData.publishedAppVersion);
         checkParameter(result, ServiceNowParameterDefinition.PARAMS_NAMES.rollbackAppVersion, TestData.rollbackAppVersion);
         checkParameter(result, ServiceNowParameterDefinition.PARAMS_NAMES.sysId, TestData.systemId);
+        checkParameter(result, ServiceNowParameterDefinition.PARAMS_NAMES.progressCheckInterval, TestData.progressCheckInterval);
     }
 
     public void testCreateFrom() {
@@ -70,13 +71,20 @@ public class ServiceNowParameterDefinitionTest extends TestCase {
         assertThat(parameterDefinition.getPublishedAppVersion()).isEqualTo(TestData.publishedAppVersion);
         assertThat(parameterDefinition.getRollbackAppVersion()).isEqualTo(TestData.rollbackAppVersion);
         assertThat(parameterDefinition.getSysId()).isEqualTo(TestData.systemId);
+        assertThat(parameterDefinition.getProgressCheckInterval()).isEqualTo(TestData.progressCheckInterval);
         parameterDefinition.getDefaultParameterValue();
     }
 
     private void checkParameter(ParameterValue parametersValue, String paramName, String value) {
         JSONObject parameters = JSONObject.fromObject(parametersValue.getValue());
         assertThat(parameters.containsKey(paramName)).isTrue();
-        assertThat((String) parameters.get(paramName)).isEqualTo(value);
+        assertThat(parameters.getString(paramName)).isEqualTo(value);
+    }
+
+    private void checkParameter(ParameterValue parametersValue, String paramName, Integer value) {
+        JSONObject parameters = JSONObject.fromObject(parametersValue.getValue());
+        assertThat(parameters.containsKey(paramName)).isTrue();
+        assertThat(parameters.getInt(paramName)).isEqualTo(value);
     }
 
     private interface TestData {
@@ -89,6 +97,7 @@ public class ServiceNowParameterDefinitionTest extends TestCase {
         String publishedAppVersion = "1028.0.4";
         String rollbackAppVersion = "1028.0.3";
         String systemId = "123erwqe";
+        Integer progressCheckInterval = 100;
 
         static String getJson() {
             return "{\"name\":\"snParam\"," +
@@ -100,7 +109,8 @@ public class ServiceNowParameterDefinitionTest extends TestCase {
                     "\"sysId\":\"" + systemId + "\"," +
                     "\"appScope\":\"" + applicationScope + "\"," +
                     "\"publishedAppVersion\":\"" + publishedAppVersion + "\"," +
-                    "\"rollbackAppVersion\":\"" + rollbackAppVersion + "\"}";
+                    "\"rollbackAppVersion\":\"" + rollbackAppVersion + "\"," +
+                    "\"progressCheckInterval\":\"" + progressCheckInterval + "\"}";
         }
     }
 }

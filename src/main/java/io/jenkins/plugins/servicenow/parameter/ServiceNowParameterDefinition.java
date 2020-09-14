@@ -4,6 +4,7 @@ import hudson.Extension;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
 import hudson.util.FormValidation;
+import io.jenkins.plugins.servicenow.Constants;
 import io.jenkins.plugins.servicenow.Messages;
 import io.jenkins.plugins.servicenow.utils.Validator;
 import net.sf.json.JSONObject;
@@ -32,6 +33,7 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
         String appScope = "appScope";
         String publishedAppVersion = "publishedAppVersion";
         String rollbackAppVersion = "rollbackAppVersion";
+        String progressCheckInterval = "progressCheckInterval";
     }
 
     private String credentialsForPublishedApp;
@@ -42,6 +44,7 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
     private String appScope;
     private String publishedAppVersion;
     private String rollbackAppVersion;
+    private Integer progressCheckInterval;
 
     public String getCredentialsForPublishedApp() {
         return credentialsForPublishedApp;
@@ -75,6 +78,10 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
         return rollbackAppVersion;
     }
 
+    public Integer getProgressCheckInterval() {
+        return progressCheckInterval;
+    }
+
     // Override the standard constructor
     public ServiceNowParameterDefinition(String name) {
         super(PARAMETER_NAME);
@@ -88,7 +95,7 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
     @DataBoundConstructor
     public ServiceNowParameterDefinition(String description, String credentialsForPublishedApp,
             String instanceForPublishedAppUrl, String credentialsForInstalledApp, String instanceForInstalledAppUrl,
-            String sysId, String appScope, String publishedAppVersion, String rollbackAppVersion) {
+            String sysId, String appScope, String publishedAppVersion, String rollbackAppVersion, Integer progressCheckInterval) {
         super(PARAMETER_NAME, description);
         this.credentialsForPublishedApp = credentialsForPublishedApp;
         this.instanceForPublishedAppUrl = instanceForPublishedAppUrl;
@@ -98,6 +105,11 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
         this.appScope = appScope;
         this.publishedAppVersion = publishedAppVersion;
         this.rollbackAppVersion = rollbackAppVersion;
+        if(progressCheckInterval != null) {
+            this.progressCheckInterval = progressCheckInterval;
+        } else {
+            this.progressCheckInterval = Constants.PROGRESS_CHECK_INTERVAL;
+        }
     }
 
     @Override
@@ -117,15 +129,16 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
     public static ServiceNowParameterDefinition createFrom(final String value) {
         JSONObject o = JSONObject.fromObject(value);
         return new ServiceNowParameterDefinition(
-                (String) o.get(PARAMS_NAMES.description),
-                (String) o.get(PARAMS_NAMES.credentialsForPublishedApp),
-                (String) o.get(PARAMS_NAMES.instanceForPublishedAppUrl),
-                (String) o.get(PARAMS_NAMES.credentialsForInstalledApp),
-                (String) o.get(PARAMS_NAMES.instanceForInstalledAppUrl),
-                (String) o.get(PARAMS_NAMES.sysId),
-                (String) o.get(PARAMS_NAMES.appScope),
-                (String) o.get(PARAMS_NAMES.publishedAppVersion),
-                (String) o.get(PARAMS_NAMES.rollbackAppVersion)
+                o.getString(PARAMS_NAMES.description),
+                o.getString(PARAMS_NAMES.credentialsForPublishedApp),
+                o.getString(PARAMS_NAMES.instanceForPublishedAppUrl),
+                o.getString(PARAMS_NAMES.credentialsForInstalledApp),
+                o.getString(PARAMS_NAMES.instanceForInstalledAppUrl),
+                o.getString(PARAMS_NAMES.sysId),
+                o.getString(PARAMS_NAMES.appScope),
+                o.getString(PARAMS_NAMES.publishedAppVersion),
+                o.getString(PARAMS_NAMES.rollbackAppVersion),
+                o.getInt(PARAMS_NAMES.progressCheckInterval)
         );
     }
 
@@ -159,6 +172,17 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
             if(StringUtils.isNotBlank(value)) {
                 if(!Validator.validateInstanceUrl(value)) {
                     return FormValidation.error(Messages.ServiceNowParameterDefinition_DescriptorImpl_errors_wrongInstanceForInstalledAppUrl());
+                }
+            }
+            return FormValidation.ok();
+        }
+
+        public FormValidation doCheckProgressCheckInterval(@QueryParameter Integer value)
+                throws IOException, ServletException {
+
+            if(value != null) {
+                if(value < 100) {
+                    return FormValidation.error(Messages.ServiceNowParameterDefinition_DescriptorImpl_errors_progressCheckIntervalTooSmall());
                 }
             }
             return FormValidation.ok();

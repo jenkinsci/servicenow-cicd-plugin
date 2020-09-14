@@ -1,6 +1,7 @@
 package io.jenkins.plugins.servicenow.parameter;
 
 import hudson.model.StringParameterValue;
+import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 
 public class ServiceNowParameterValue extends StringParameterValue {
@@ -12,27 +13,42 @@ public class ServiceNowParameterValue extends StringParameterValue {
     }
 
     public String getCredentialsForPublishedApp() {
-        return (String)JSONObject.fromObject(this.value).get("credentialsForPublishedApp");
+        return (String) JSONObject.fromObject(this.value).get("credentialsForPublishedApp");
     }
+
     public String getInstanceForPublishedAppUrl() {
-        return (String)JSONObject.fromObject(this.value).get("instanceForPublishedAppUrl");
+        return (String) JSONObject.fromObject(this.value).get("instanceForPublishedAppUrl");
     }
+
     public String getCredentialsForInstalledApp() {
-        return (String)JSONObject.fromObject(this.value).get("credentialsForInstalledApp");
+        return (String) JSONObject.fromObject(this.value).get("credentialsForInstalledApp");
     }
+
     public String getInstanceForInstalledAppUrl() {
-        return (String)JSONObject.fromObject(this.value).get("instanceForInstalledAppUrl");
+        return (String) JSONObject.fromObject(this.value).get("instanceForInstalledAppUrl");
     }
+
     public String getSysId() {
-        return (String)JSONObject.fromObject(this.value).get("sysId");
+        return (String) JSONObject.fromObject(this.value).get("sysId");
     }
+
     public String getAppScope() {
-        return (String)JSONObject.fromObject(this.value).get("appScope");
+        return (String) JSONObject.fromObject(this.value).get("appScope");
     }
+
     public String getPublishedAppVersion() {
-        return (String)JSONObject.fromObject(this.value).get("publishedAppVersion");
+        return (String) JSONObject.fromObject(this.value).get("publishedAppVersion");
     }
+
     public String getRollbackAppVersion() {
-        return (String)JSONObject.fromObject(this.value).get("rollbackAppVersion");
+        return (String) JSONObject.fromObject(this.value).get("rollbackAppVersion");
+    }
+
+    public Integer getProgressCheckInterval() {
+        try {
+            return Integer.parseInt(JSONObject.fromObject(this.value).getString("progressCheckInterval"));
+        } catch(NumberFormatException | JSONException ex) {
+        }
+        return null;
     }
 }

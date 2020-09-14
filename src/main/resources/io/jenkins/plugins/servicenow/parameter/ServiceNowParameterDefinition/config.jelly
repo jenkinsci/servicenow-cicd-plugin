@@ -1,5 +1,5 @@
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+<f:entry xmlns:j="jelly:core" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
     <f:entry field="credentialsForPublishedApp" title="${%CredentialsForPublishedApp}">
         <div tooltip="${%CredentialsForPublishedAppDescr}"><f:textbox/></div>
     </f:entry>
@@ -24,7 +24,11 @@
     <f:entry field="rollbackAppVersion" title="${%RollbackAppVersion}">
         <div tooltip="${%RollbackAppVersionDescr}"><f:textbox/></div>
     </f:entry>
+    <f:entry field="progressCheckInterval" title="${%ProgressCheckInterval}">
+        <f:number min="100" value="${Constants.PROGRESS_CHECK_INTERVAL}"/>
+    </f:entry>
     <f:entry field="description" title="${%Description}" help="/help/parameter/description.html">
         <f:textarea/>
     </f:entry>
-</j:jelly>
+</f:entry>
+

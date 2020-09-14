@@ -94,6 +94,45 @@ public class ServiceNowParameterValueTest extends TestCase {
         assertThat(result).isEqualTo(TestData.rollbackAppVersion);
     }
 
+    public void testGetProgressCheckInterval() {
+        // given
+        ServiceNowParameterValue parameterValue = new ServiceNowParameterValue("test", TestData.getJson());
+
+        // when
+        Integer result = parameterValue.getProgressCheckInterval();
+
+        // then
+        assertThat(result).isEqualTo(TestData.progressCheckInterval);
+    }
+
+    public void testGetEmptyProgressCheckInterval() {
+        // given
+        String replace = "\"progressCheckInterval\":\"" + TestData.progressCheckInterval;
+        String by = "\"progressCheckInterval\":\"";
+        String json = TestData.getJson().replace(replace, by);
+        ServiceNowParameterValue parameterValue = new ServiceNowParameterValue("test", json);
+
+        // when
+        Integer result = parameterValue.getProgressCheckInterval();
+
+        // then
+        assertThat(result).isNull();
+    }
+
+    public void testNotExistingProgressCheckInterval() {
+        // given
+        String replace = "\"progressCheckInterval\":\"" + TestData.progressCheckInterval + "\"";
+        String by = "";
+        String json = TestData.getJson().replace(replace, by);
+        ServiceNowParameterValue parameterValue = new ServiceNowParameterValue("test", json);
+
+        // when
+        Integer result = parameterValue.getProgressCheckInterval();
+
+        // then
+        assertThat(result).isNull();
+    }
+
     private interface TestData {
         String description = "description";
         String credentialsForInstalledApp = "88dbbe69-0e00-4dd5-838b-2fbd8dfedeb4";
@@ -104,6 +143,7 @@ public class ServiceNowParameterValueTest extends TestCase {
         String publishedAppVersion = "1028.0.4";
         String rollbackAppVersion = "1028.0.3";
         String systemId = "123erwqe";
+        Integer progressCheckInterval = 100;
 
         static String getJson() {
             return "{\"name\":\"snParam\"," +
@@ -115,7 +155,8 @@ public class ServiceNowParameterValueTest extends TestCase {
                     "\"sysId\":\"" + systemId + "\"," +
                     "\"appScope\":\"" + applicationScope + "\"," +
                     "\"publishedAppVersion\":\"" + publishedAppVersion + "\"," +
-                    "\"rollbackAppVersion\":\"" + rollbackAppVersion + "\"}";
+                    "\"rollbackAppVersion\":\"" + rollbackAppVersion + "\"," +
+                    "\"progressCheckInterval\":\"" + progressCheckInterval + "\"}";
         }
     }
 }

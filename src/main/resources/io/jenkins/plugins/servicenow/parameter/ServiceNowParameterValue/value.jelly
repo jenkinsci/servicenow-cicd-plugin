@@ -10,5 +10,6 @@
 	<f:entry title="${%AppScope}">${it.appScope}</f:entry>
 	<f:entry title="${%PublishedAppVersion}">${it.publishedAppVersion}</f:entry>
 	<f:entry title="${%RollbackAppVersion}">${it.rollbackAppVersion}</f:entry>
+	<f:entry title="${%ProgressCheckInterval}">${it.progressCheckInterval}</f:entry>
 	<f:entry title="${%Description}">${it.description}</f:entry>
 </j:jelly>

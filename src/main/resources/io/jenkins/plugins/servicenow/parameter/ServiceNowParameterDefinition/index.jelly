@@ -16,6 +16,7 @@
                     <tr><td>${%AppScope}</td><td><div tooltip="${%AppScopeDescr}"><f:textbox field="appScope" value="${it.appScope}"/></div></td></tr>
                     <tr><td>${%PublishedAppVersion}</td><td><div tooltip="${%PublishedAppVersionDescr}"><f:textbox field="publishedAppVersion" value="${it.publishedAppVersion}"/></div></td></tr>
                     <tr><td>${%RollbackAppVersion}</td><td><div tooltip="${%RollbackAppVersionDescr}"><f:textbox field="rollbackAppVersion" value="${it.rollbackAppVersion}"/></div></td></tr>
+                    <tr><td>${%ProgressCheckInterval}</td><td><div tooltip="${%ProgressCheckIntervalDescr}"><f:textbox field="progressCheckInterval" value="${it.progressCheckInterval}"/></div></td></tr>
                 </table>
                 </p>
             </j:scope>
