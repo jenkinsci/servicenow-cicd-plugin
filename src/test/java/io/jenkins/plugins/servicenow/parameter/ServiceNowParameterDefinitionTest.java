@@ -58,6 +58,7 @@ public class ServiceNowParameterDefinitionTest extends TestCase {
         checkParameter(result, ServiceNowParameterDefinition.PARAMS_NAMES.progressCheckInterval, TestData.progressCheckInterval);
     }
 
+    @Test
     public void testCreateFrom() {
         // when
         ServiceNowParameterDefinition parameterDefinition = ServiceNowParameterDefinition.createFrom(TestData.getJson());
@@ -72,7 +73,26 @@ public class ServiceNowParameterDefinitionTest extends TestCase {
         assertThat(parameterDefinition.getRollbackAppVersion()).isEqualTo(TestData.rollbackAppVersion);
         assertThat(parameterDefinition.getSysId()).isEqualTo(TestData.systemId);
         assertThat(parameterDefinition.getProgressCheckInterval()).isEqualTo(TestData.progressCheckInterval);
-        parameterDefinition.getDefaultParameterValue();
+        assertThat(parameterDefinition.getDescription()).isEqualTo(TestData.description);
+    }
+
+    @Test
+    public void testCreateFrom_noDescription() {
+        // when
+        String phraseToBeRemoved = "\"description\":\"" + TestData.description + "\",";
+        ServiceNowParameterDefinition parameterDefinition = ServiceNowParameterDefinition.createFrom(TestData.getJson().replace(phraseToBeRemoved, ""));
+
+        // then
+        assertThat(parameterDefinition.getAppScope()).isEqualTo(TestData.applicationScope);
+        assertThat(parameterDefinition.getCredentialsForInstalledApp()).isEqualTo(TestData.credentialsForInstalledApp);
+        assertThat(parameterDefinition.getCredentialsForPublishedApp()).isEqualTo(TestData.publishingCredentials);
+        assertThat(parameterDefinition.getInstanceForInstalledAppUrl()).isEqualTo(TestData.instanceForInstalledAppUrl);
+        assertThat(parameterDefinition.getInstanceForPublishedAppUrl()).isEqualTo(TestData.instanceForPublishedAppUrl);
+        assertThat(parameterDefinition.getPublishedAppVersion()).isEqualTo(TestData.publishedAppVersion);
+        assertThat(parameterDefinition.getRollbackAppVersion()).isEqualTo(TestData.rollbackAppVersion);
+        assertThat(parameterDefinition.getSysId()).isEqualTo(TestData.systemId);
+        assertThat(parameterDefinition.getProgressCheckInterval()).isEqualTo(TestData.progressCheckInterval);
+        assertThat(parameterDefinition.getDescription()).isBlank();
     }
 
     private void checkParameter(ParameterValue parametersValue, String paramName, String value) {

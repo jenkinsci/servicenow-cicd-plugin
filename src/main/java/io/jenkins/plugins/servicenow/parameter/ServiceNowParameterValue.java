@@ -3,6 +3,7 @@ package io.jenkins.plugins.servicenow.parameter;
 import hudson.model.StringParameterValue;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
 
 public class ServiceNowParameterValue extends StringParameterValue {
 
@@ -50,5 +51,10 @@ public class ServiceNowParameterValue extends StringParameterValue {
         } catch(NumberFormatException | JSONException ex) {
         }
         return null;
+    }
+
+    public String getDescription() {
+        String paramName = "description";
+        return JSONObject.fromObject(this.value).has(paramName) ? JSONObject.fromObject(this.value).getString(paramName) : StringUtils.EMPTY;
     }
 }

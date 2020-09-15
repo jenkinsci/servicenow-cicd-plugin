@@ -129,7 +129,7 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
     public static ServiceNowParameterDefinition createFrom(final String value) {
         JSONObject o = JSONObject.fromObject(value);
         return new ServiceNowParameterDefinition(
-                o.getString(PARAMS_NAMES.description),
+                o.has(PARAMS_NAMES.description) ? o.getString(PARAMS_NAMES.description) : StringUtils.EMPTY,
                 o.getString(PARAMS_NAMES.credentialsForPublishedApp),
                 o.getString(PARAMS_NAMES.instanceForPublishedAppUrl),
                 o.getString(PARAMS_NAMES.credentialsForInstalledApp),
