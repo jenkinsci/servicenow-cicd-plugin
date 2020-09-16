@@ -110,7 +110,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>15.0</version>
+            <version>[24.1.1,)</version>
             <scope>test</scope>
         </dependency>
         <!-- end of mockserver dependencies-->
