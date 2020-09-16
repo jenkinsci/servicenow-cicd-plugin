@@ -14,6 +14,8 @@ import io.jenkins.plugins.servicenow.api.ActionStatus;
 import io.jenkins.plugins.servicenow.api.ServiceNowApiException;
 import io.jenkins.plugins.servicenow.api.model.Result;
 import io.jenkins.plugins.servicenow.application.ApplicationVersion;
+import io.jenkins.plugins.servicenow.parameter.ServiceNowParameterDefinition;
+import io.jenkins.plugins.servicenow.utils.Validator;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -24,8 +26,6 @@ import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
-import javax.servlet.ServletException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -156,12 +156,39 @@ public class PublishAppBuilder extends ProgressBuilder {
     @Override
     protected void setupBuilderParameters(EnvVars environment) {
         super.setupBuilderParameters(environment);
+
+        // valid for version <= 0.92
         if(StringUtils.isBlank(this.appScope)) {
             this.appScope = environment.get(BuildParameters.appScope);
         }
         if(StringUtils.isBlank(this.appSysId)) {
             this.appSysId = environment.get(BuildParameters.appSysId);
         }
+
+        // valid for version > 0.92
+        if(getGlobalSNParams() != null) {
+            final String url = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.instanceForPublishedAppUrl);
+            if(StringUtils.isBlank(this.getUrl()) && StringUtils.isNotBlank(url)) {
+                this.setUrl(url);
+            }
+            final String credentialsId = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.credentialsForPublishedApp);
+            if(StringUtils.isBlank(this.getCredentialsId()) && StringUtils.isNotBlank(credentialsId)) {
+                this.setCredentialsId(credentialsId);
+            }
+            final String scope = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.appScope);
+            if(StringUtils.isBlank(this.appScope) && StringUtils.isNotBlank(scope)) {
+                this.appScope = scope;
+            }
+            final String sysId = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.sysId);
+            if(StringUtils.isBlank(this.appSysId) && StringUtils.isNotBlank(sysId)) {
+                this.appSysId = sysId;
+            }
+            final String appVersion = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.publishedAppVersion);
+            if(StringUtils.isBlank(this.appVersion) && StringUtils.isNotBlank(appVersion)) {
+                this.calculatedAppVersion = appVersion;
+            }
+        }
+
         if(StringUtils.isBlank(this.appVersion)) {
             this.calculatedAppVersion = "1.0." + environment.get("BUILD_NUMBER");
         } else if(this.appVersion.split("\\.").length == 2) {
@@ -198,36 +225,48 @@ public class PublishAppBuilder extends ProgressBuilder {
     protected List<ParameterValue> setupParametersAfterBuildStep() {
         List<ParameterValue> parameters = new ArrayList<>();
         if(StringUtils.isNotBlank(this.calculatedAppVersion)) {
+            // valid for version <= 0.92
             parameters.add(new StringParameterValue(BuildParameters.publishedAppVersion, this.calculatedAppVersion));
+            // valid from version > 0.92
+            if(getGlobalSNParams() != null) {
+                getGlobalSNParams().replace(ServiceNowParameterDefinition.PARAMS_NAMES.publishedAppVersion, this.calculatedAppVersion);
+                parameters.add(ServiceNowParameterDefinition.createFrom(getGlobalSNParams().toString()).createValue(null, getGlobalSNParams()));
+            }
             LOG.info("Store following published version to be installed: " + this.calculatedAppVersion);
         }
         return parameters;
     }
 
-@Symbol("snPublishApp")
-@Extension
-public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
+    @Symbol("snPublishApp")
+    @Extension
+    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
-    public FormValidation doCheckName(@QueryParameter String url)
-            throws IOException, ServletException {
-
-        final String regex = "^https?://.+";
-        if(url.matches(regex)) {
-            return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
+        public FormValidation doCheckUrl(@QueryParameter String value) {
+            if(StringUtils.isNotBlank(value)) {
+                if(!Validator.validateInstanceUrl(value)) {
+                    return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
+                }
+            }
+            return FormValidation.ok();
         }
-        return FormValidation.ok();
+
+        public FormValidation doCheckObtainVersionFromSC(@QueryParameter Boolean value, @QueryParameter("appVersion") String appVersion) {
+            if(value && StringUtils.isNotBlank(appVersion)) {
+                return FormValidation.warning(Messages.PublishAppBuilder_DescriptorImpl_warnings_obtainVersionFromSC());
+            }
+            return FormValidation.ok();
+        }
+
+        @Override
+        public boolean isApplicable(Class<? extends AbstractProject> aClass) {
+            return true;
+        }
+
+
+        @Override
+        public String getDisplayName() {
+            return Messages.PublishAppBuilder_DescriptorImpl_DisplayName();
+        }
+
     }
-
-    @Override
-    public boolean isApplicable(Class<? extends AbstractProject> aClass) {
-        return true;
-    }
-
-
-    @Override
-    public String getDisplayName() {
-        return Messages.PublishAppBuilder_DescriptorImpl_DisplayName();
-    }
-
-}
 }

@@ -10,6 +10,8 @@ import hudson.util.FormValidation;
 import io.jenkins.plugins.servicenow.api.ActionStatus;
 import io.jenkins.plugins.servicenow.api.ServiceNowApiException;
 import io.jenkins.plugins.servicenow.api.model.Result;
+import io.jenkins.plugins.servicenow.parameter.ServiceNowParameterDefinition;
+import io.jenkins.plugins.servicenow.utils.Validator;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -19,8 +21,6 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nonnull;
-import javax.servlet.ServletException;
-import java.io.IOException;
 import java.net.UnknownHostException;
 
 public class ApplyChangesBuilder extends ProgressBuilder {
@@ -66,6 +66,8 @@ public class ApplyChangesBuilder extends ProgressBuilder {
     @Override
     protected void setupBuilderParameters(EnvVars environment) {
         super.setupBuilderParameters(environment);
+
+        // parameters used in version <= 0.92
         if(StringUtils.isBlank(this.appScope)) {
             this.appScope = environment.get(BuildParameters.appScope);
         }
@@ -74,6 +76,26 @@ public class ApplyChangesBuilder extends ProgressBuilder {
         }
         if(StringUtils.isBlank(this.branchName)) {
             this.branchName = environment.get(BuildParameters.branchName);
+        }
+
+        // new ServiceNow Parameter for version > 0.92
+        if(getGlobalSNParams() != null) {
+            final String url = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.instanceForPublishedAppUrl);
+            if(StringUtils.isBlank(this.getUrl()) && StringUtils.isNotBlank(url)) {
+                this.setUrl(url);
+            }
+            final String credentialsId = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.credentialsForPublishedApp);
+            if(StringUtils.isBlank(this.getCredentialsId()) && StringUtils.isNotBlank(credentialsId)) {
+                this.setCredentialsId(credentialsId);
+            }
+            final String scope = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.appScope);
+            if(StringUtils.isBlank(this.appScope) && StringUtils.isNotBlank(scope)) {
+                this.appScope = scope;
+            }
+            final String sysId = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.sysId);
+            if(StringUtils.isBlank(this.appSysId) && StringUtils.isNotBlank(sysId)) {
+                this.appSysId = sysId;
+            }
         }
     }
 
@@ -91,6 +113,7 @@ public class ApplyChangesBuilder extends ProgressBuilder {
         }  catch (UnknownHostException ex) {
             taskListener.getLogger().println("Check connection: " + ex.getMessage());
         } catch(Exception ex) {
+            LOG.error(ex.getMessage(), ex);
             taskListener.getLogger().println(ex.getMessage());
         }
 
@@ -132,12 +155,11 @@ public class ApplyChangesBuilder extends ProgressBuilder {
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
-        public FormValidation doCheckName(@QueryParameter String url)
-                throws IOException, ServletException {
-
-            final String regex = "^https?://.+";
-            if(url.matches(regex)) {
-                return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
+        public FormValidation doCheckUrl(@QueryParameter String value) {
+            if(StringUtils.isNotBlank(value)) {
+                if(!Validator.validateInstanceUrl(value)) {
+                    return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
+                }
             }
             return FormValidation.ok();
         }

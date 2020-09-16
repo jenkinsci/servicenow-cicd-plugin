@@ -13,6 +13,9 @@ import io.jenkins.plugins.servicenow.api.ActionStatus;
 import io.jenkins.plugins.servicenow.api.ResponseUnboundParameters;
 import io.jenkins.plugins.servicenow.api.ServiceNowApiException;
 import io.jenkins.plugins.servicenow.api.model.Result;
+import io.jenkins.plugins.servicenow.parameter.ServiceNowParameterDefinition;
+import io.jenkins.plugins.servicenow.parameter.ServiceNowParameterDefinition.PARAMS_NAMES;
+import io.jenkins.plugins.servicenow.utils.Validator;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -22,8 +25,6 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nonnull;
-import javax.servlet.ServletException;
-import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
@@ -80,7 +81,7 @@ public class InstallAppBuilder extends ProgressBuilder {
         boolean result = false;
 
         taskListener.getLogger().println("\nSTART: ServiceNow - Install the specified application (version: " + Optional.ofNullable(this.appVersionToInstall).orElse("the latest") + ")");
-        if(StringUtils.isBlank(this.appVersionToInstall)) {
+        if(StringUtils.isBlank(this.appVersionToInstall) && getGlobalSNParams() == null) {
             taskListener.getLogger().println("WARNING: Parameter '" + BuildParameters.publishedAppVersion + "' is empty.\n" +
                     "Probably the build will fail! Following reason can be:\n" +
                     "1) the step 'publish application' was not launched before,\n" +
@@ -144,6 +145,8 @@ public class InstallAppBuilder extends ProgressBuilder {
     @Override
     protected void setupBuilderParameters(EnvVars environment) {
         super.setupBuilderParameters(environment);
+
+        // parameters used in version <= 0.92
         if(StringUtils.isBlank(this.appScope)) {
             this.appScope = environment.get(BuildParameters.appScope);
         }
@@ -155,15 +158,46 @@ public class InstallAppBuilder extends ProgressBuilder {
         } else {
             this.appVersionToInstall = appVersion;
         }
+
+        // new ServiceNow Parameter for version > 0.92
+        if(getGlobalSNParams() != null) {
+            final String url = getGlobalSNParams().getString(PARAMS_NAMES.instanceForInstalledAppUrl);
+            if(StringUtils.isBlank(this.getUrl()) && StringUtils.isNotBlank(url)) {
+                this.setUrl(url);
+            }
+            final String credentialsId = getGlobalSNParams().getString(PARAMS_NAMES.credentialsForInstalledApp);
+            if(StringUtils.isBlank(this.getCredentialsId()) && StringUtils.isNotBlank(credentialsId)) {
+                this.setCredentialsId(credentialsId);
+            }
+            final String scope = getGlobalSNParams().getString(PARAMS_NAMES.appScope);
+            if(StringUtils.isBlank(this.appScope) && StringUtils.isNotBlank(scope)) {
+                this.appScope = scope;
+            }
+            final String sysId = getGlobalSNParams().getString(PARAMS_NAMES.sysId);
+            if(StringUtils.isBlank(this.appSysId) && StringUtils.isNotBlank(sysId)) {
+                this.appSysId = sysId;
+            }
+            final String appVersion = getGlobalSNParams().getString(PARAMS_NAMES.publishedAppVersion);
+            if(StringUtils.isBlank(this.appVersion) && StringUtils.isNotBlank(appVersion)) {
+                this.appVersionToInstall = appVersion;
+            }
+        }
     }
 
     @Override
     protected List<ParameterValue> setupParametersAfterBuildStep() {
         List<ParameterValue> parameters = new ArrayList<>();
         if(StringUtils.isNotBlank(this.rollbackAppVersion)) {
+            // valid for version <= 0.92
             parameters.add(new StringParameterValue(BuildParameters.rollbackAppVersion, this.rollbackAppVersion));
+            // valid from version > 0.92
+            if(getGlobalSNParams() != null) {
+                getGlobalSNParams().replace(PARAMS_NAMES.rollbackAppVersion, this.rollbackAppVersion);
+                parameters.add(ServiceNowParameterDefinition.createFrom(getGlobalSNParams().toString()).createValue(null, getGlobalSNParams()));
+            }
             LOG.info("Store following rollback version in case of tests failure: " + this.rollbackAppVersion);
         }
+
         return parameters;
     }
 
@@ -171,12 +205,11 @@ public class InstallAppBuilder extends ProgressBuilder {
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
-        public FormValidation doCheckName(@QueryParameter String url)
-                throws IOException, ServletException {
-
-            final String regex = "^https?://.+";
-            if(url.matches(regex)) {
-                return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
+        public FormValidation doCheckUrl(@QueryParameter String value) {
+            if(StringUtils.isNotBlank(value)) {
+                if(!Validator.validateInstanceUrl(value)) {
+                    return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
+                }
             }
             return FormValidation.ok();
         }

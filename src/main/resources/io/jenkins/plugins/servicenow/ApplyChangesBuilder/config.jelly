@@ -3,31 +3,23 @@
          xmlns:t="/lib/hudson" xmlns:f="/lib/form">
     <f:advanced>
         <f:entry title="${%Url}" field="url">
-            <div tooltip="${%UrlDescr}">
-                <f:textbox/>
-            </div>
+            <f:textbox/>
         </f:entry>
         <f:entry title="${%Credentials}" field="credentialsId">
-            <div tooltip="${%CredentialsDescr}">
-                <f:textbox/>
-            </div>
+            <f:textbox/>
         </f:entry>
 
         <f:entry title="${%ApiVersion}" field="apiVersion">
-            <div tooltip="${%ApiVersionDescr}"><f:textbox/></div>
+            <f:textbox/>
         </f:entry>
         <f:entry title="${%AppScope}" field="appScope">
-            <div tooltip="${%AppScopeDescr}">
-                <f:textbox/>
-            </div>
+            <f:textbox/>
         </f:entry>
         <f:entry title="${%AppSysId}" field="appSysId">
-            <div tooltip="${%AppSysIdDescr}">
-                <f:textbox/>
-            </div>
+            <f:textbox/>
         </f:entry>
         <f:entry title="${%BranchName}" field="branchName">
-            <div tooltip="${%BranchNameDescr}"><f:textbox/></div>
+            <f:textbox/>
         </f:entry>
     </f:advanced>
 </j:jelly>

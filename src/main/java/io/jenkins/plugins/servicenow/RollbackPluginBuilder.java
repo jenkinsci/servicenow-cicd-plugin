@@ -9,6 +9,7 @@ import hudson.util.FormValidation;
 import io.jenkins.plugins.servicenow.api.ActionStatus;
 import io.jenkins.plugins.servicenow.api.ServiceNowApiException;
 import io.jenkins.plugins.servicenow.api.model.Result;
+import io.jenkins.plugins.servicenow.utils.Validator;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -18,8 +19,6 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nonnull;
-import javax.servlet.ServletException;
-import java.io.IOException;
 import java.net.UnknownHostException;
 
 public class RollbackPluginBuilder extends ProgressBuilder {
@@ -53,7 +52,7 @@ public class RollbackPluginBuilder extends ProgressBuilder {
             serviceNowResult = getRestClient().rollbackPlugin(this.getPluginId());
         } catch(ServiceNowApiException ex) {
             taskListener.getLogger().format("Error occurred when API with the action 'rollback plugin' was called: '%s' [details: '%s'].%n", ex.getMessage(), ex.getDetail());
-        }  catch (UnknownHostException ex) {
+        } catch(UnknownHostException ex) {
             taskListener.getLogger().println("Check connection: " + ex.getMessage());
         } catch(Exception ex) {
             taskListener.getLogger().println(ex.getMessage());
@@ -107,15 +106,23 @@ public class RollbackPluginBuilder extends ProgressBuilder {
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
-        public FormValidation doCheckName(@QueryParameter("url") String url, @QueryParameter("pluginId") String pluginId)
-                throws IOException, ServletException {
-
-            final String regex = "^https?://.+";
-            if(url.matches(regex)) {
+        public FormValidation doCheckUrl(@QueryParameter String value) {
+            if(StringUtils.isBlank(value) || !Validator.validateInstanceUrl(value)) {
                 return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
             }
-            if(StringUtils.isBlank(pluginId)) {
+            return FormValidation.ok();
+        }
+
+        public FormValidation doCheckPluginId(@QueryParameter String value) {
+            if(StringUtils.isBlank(value)) {
                 return FormValidation.error(Messages.ActivatePluginBuilder_DescriptorImpl_errors_emptyPluginId());
+            }
+            return FormValidation.ok();
+        }
+
+        public FormValidation doCheckCredentialsId(@QueryParameter String value) {
+            if(StringUtils.isBlank(value)) {
+                return FormValidation.error(Messages.ActivatePluginBuilder_DescriptorImpl_errors_emptyCredentials());
             }
             return FormValidation.ok();
         }

@@ -1,0 +1,34 @@
+<?jelly escape-by-default='true'?>
+<f:entry xmlns:j="jelly:core" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    <f:entry field="credentialsForPublishedApp" title="${%CredentialsForPublishedApp}">
+        <div tooltip="${%CredentialsForPublishedAppDescr}"><f:textbox/></div>
+    </f:entry>
+    <f:entry field="instanceForPublishedAppUrl" title="${%InstanceForPublishedAppUrl}">
+        <div tooltip="${%InstanceForPublishedAppUrlDescr}"><f:textbox/></div>
+    </f:entry>
+    <f:entry field="credentialsForInstalledApp" title="${%CredentialsForInstalledApp}">
+        <div tooltip="${%CredentialsForInstalledAppDescr}"><f:textbox/></div>
+    </f:entry>
+    <f:entry field="instanceForInstalledAppUrl" title="${%InstanceForInstalledAppUrl}">
+        <div tooltip="${%InstanceForInstalledAppUrlDescr}"><f:textbox/></div>
+    </f:entry>
+    <f:entry field="sysId" title="${%SysId}">
+        <div tooltip="${%SysIdDescr}"><f:textbox/></div>
+    </f:entry>
+    <f:entry field="appScope" title="${%AppScope}">
+        <div tooltip="${%AppScopeDescr}"><f:textbox/></div>
+    </f:entry>
+    <f:entry field="publishedAppVersion" title="${%PublishedAppVersion}">
+        <div tooltip="${%PublishedAppVersionDescr}"><f:textbox/></div>
+    </f:entry>
+    <f:entry field="rollbackAppVersion" title="${%RollbackAppVersion}">
+        <div tooltip="${%RollbackAppVersionDescr}"><f:textbox/></div>
+    </f:entry>
+    <f:entry field="progressCheckInterval" title="${%ProgressCheckInterval}">
+        <f:number min="100" value="${Constants.PROGRESS_CHECK_INTERVAL}"/>
+    </f:entry>
+    <f:entry field="description" title="${%Description}" help="/help/parameter/description.html">
+        <f:textarea/>
+    </f:entry>
+</f:entry>
+
