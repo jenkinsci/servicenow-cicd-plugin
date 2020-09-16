@@ -2,6 +2,7 @@ package io.jenkins.plugins.servicenow;
 
 import hudson.Extension;
 import hudson.model.AbstractProject;
+import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
@@ -42,7 +43,7 @@ public class ActivatePluginBuilder extends ProgressBuilder {
     }
 
     @Override
-    protected boolean perform(@Nonnull final TaskListener taskListener, final Integer progressCheckInterval) {
+    protected boolean perform(Run<?, ?> run, @Nonnull final TaskListener taskListener, final Integer progressCheckInterval) {
         boolean result = false;
 
         taskListener.getLogger().println("\nSTART: ServiceNow - Activate the plugin " + this.pluginId);

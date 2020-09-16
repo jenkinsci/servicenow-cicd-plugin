@@ -3,10 +3,7 @@ package io.jenkins.plugins.servicenow;
 import com.google.inject.Guice;
 import hudson.EnvVars;
 import hudson.Extension;
-import hudson.model.AbstractProject;
-import hudson.model.ParameterValue;
-import hudson.model.StringParameterValue;
-import hudson.model.TaskListener;
+import hudson.model.*;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
@@ -40,7 +37,7 @@ public class PublishAppBuilder extends ProgressBuilder {
     private String appSysId;
     private String appVersion;
     private String devNotes;
-    private Boolean obtainVersionFromSC = false;
+    private Boolean obtainVersionAutomatically = false;
 
     private String calculatedAppVersion;
 
@@ -87,13 +84,13 @@ public class PublishAppBuilder extends ProgressBuilder {
         this.devNotes = devNotes;
     }
 
-    public Boolean getObtainVersionFromSC() {
-        return obtainVersionFromSC;
+    public Boolean getObtainVersionAutomatically() {
+        return obtainVersionAutomatically;
     }
 
     @DataBoundSetter
-    public void setObtainVersionFromSC(Boolean obtainVersionFromSC) {
-        this.obtainVersionFromSC = obtainVersionFromSC;
+    public void setObtainVersionAutomatically(Boolean obtainVersionAutomatically) {
+        this.obtainVersionAutomatically = obtainVersionAutomatically;
     }
 
     @Inject
@@ -102,13 +99,15 @@ public class PublishAppBuilder extends ProgressBuilder {
     }
 
     @Override
-    protected boolean perform(@Nonnull final TaskListener taskListener, final Integer progressCheckInterval) {
+    protected boolean perform(Run<?, ?> run, @Nonnull final TaskListener taskListener, final Integer progressCheckInterval) {
         boolean result = false;
 
-        taskListener.getLogger().println("\nSTART: ServiceNow - Publish the specified application (version: " + this.calculatedAppVersion + ")");
+        taskListener.getLogger().println("\nSTART: ServiceNow - Publish the specified application");
 
         Result serviceNowResult = null;
         try {
+            calculateNextAppVersion(run.getEnvironment(taskListener));
+            taskListener.getLogger().println("> new published application version: " + this.calculatedAppVersion);
             serviceNowResult = getRestClient().publishApp(this.getAppScope(), this.getAppSysId(), this.calculatedAppVersion, this.getDevNotes());
         } catch(ServiceNowApiException ex) {
             taskListener.getLogger().format("Error occurred when API with the action 'publish application' was called: '%s' [details: '%s'].%n", ex.getMessage(), ex.getDetail());
@@ -188,29 +187,55 @@ public class PublishAppBuilder extends ProgressBuilder {
                 this.calculatedAppVersion = appVersion;
             }
         }
+    }
 
+    private void calculateNextAppVersion(EnvVars environment) {
         if(StringUtils.isBlank(this.appVersion)) {
-            this.calculatedAppVersion = "1.0." + environment.get("BUILD_NUMBER");
+            if(StringUtils.isBlank(this.calculatedAppVersion)) {
+                this.calculatedAppVersion = "1.0." + environment.get("BUILD_NUMBER");
+            }
         } else if(this.appVersion.split("\\.").length == 2) {
             this.calculatedAppVersion = this.appVersion + "." + environment.get("BUILD_NUMBER");
         } else {
             this.calculatedAppVersion = this.appVersion;
         }
-        if(Boolean.TRUE.equals(this.obtainVersionFromSC)) {
-            this.calculatedAppVersion = Optional.ofNullable(getNextVersionFromSc(environment.get("WORKSPACE")))
-                    .orElseGet(() -> {
-                        LOG.warn("Application version couldn't be found in the workspace for the build '" + environment.get("JOB_NAME") +
-                                "' #" + environment.get("BUILD_NUMBER"));
-                        return this.calculatedAppVersion;
-                    });
+        if(Boolean.TRUE.equals(this.obtainVersionAutomatically)) {
+            final String newPublishedVersion = getNextVersionFromAPI();
+            if(StringUtils.isBlank(newPublishedVersion)) {
+                LOG.warn("Application version couldn't be retrieved from API for the build '" + environment.get("JOB_NAME") +
+                        "' #" + environment.get("BUILD_NUMBER"));
+                this.calculatedAppVersion = Optional.ofNullable(getNextVersionFromSc(environment.get("WORKSPACE")))
+                        .orElseGet(() -> {
+                            LOG.warn("Application version couldn't be found in the workspace for the build '" + environment.get("JOB_NAME") +
+                                    "' #" + environment.get("BUILD_NUMBER"));
+                            return this.calculatedAppVersion;
+                        });
+            } else {
+                this.calculatedAppVersion = newPublishedVersion;
+            }
         }
     }
 
     private String getNextVersionFromSc(String workspace) {
+        if(StringUtils.isBlank(workspace)) {
+            return null;
+        }
         if(this.applicationVersion == null) {
             Guice.createInjector(new ServiceNowModule()).injectMembers(this);
         }
         final String currentVersion = this.applicationVersion.getVersion(workspace, this.appSysId, this.appScope);
+        return getNextAppVersion(currentVersion);
+    }
+
+    private String getNextVersionFromAPI() {
+        if(getRestClient() != null) {
+            final String currentVersion = getRestClient().getCurrentAppVersion(this.getAppScope(), this.getAppSysId());
+            return getNextAppVersion(currentVersion);
+        }
+        return null;
+    }
+
+    private String getNextAppVersion(String currentVersion) {
         if(StringUtils.isNotBlank(currentVersion)) {
             String[] versionNumbers = currentVersion.split("\\.");
             if(versionNumbers.length > 1) {
@@ -250,9 +275,9 @@ public class PublishAppBuilder extends ProgressBuilder {
             return FormValidation.ok();
         }
 
-        public FormValidation doCheckObtainVersionFromSC(@QueryParameter Boolean value, @QueryParameter("appVersion") String appVersion) {
+        public FormValidation doCheckObtainVersionAutomatically(@QueryParameter Boolean value, @QueryParameter("appVersion") String appVersion) {
             if(value && StringUtils.isNotBlank(appVersion)) {
-                return FormValidation.warning(Messages.PublishAppBuilder_DescriptorImpl_warnings_obtainVersionFromSC());
+                return FormValidation.warning(Messages.PublishAppBuilder_DescriptorImpl_warnings_obtainVersionAutomatically());
             }
             return FormValidation.ok();
         }

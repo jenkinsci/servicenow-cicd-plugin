@@ -66,7 +66,7 @@ public class PublishAppBuilderTest {
         publishAppBuilder.setAppScope(TestData.scope);
         publishAppBuilder.setAppSysId((TestData.sysId));
         publishAppBuilder.setDevNotes(TestData.devNotes);
-        publishAppBuilder.setObtainVersionFromSC(false);
+        publishAppBuilder.setObtainVersionAutomatically(false);
 
         given(this.restClientMock.publishApp(eq(TestData.scope), eq(TestData.sysId), eq(TestData.applicationVersion), eq(TestData.devNotes))).willReturn(getPendingResult());
         given(this.restClientMock.checkProgress()).willReturn(getSuccessfulResult(100,null));
@@ -100,7 +100,7 @@ public class PublishAppBuilderTest {
         publishAppBuilder.setAppScope(TestData.scope);
         publishAppBuilder.setAppSysId((TestData.sysId));
         publishAppBuilder.setDevNotes(TestData.devNotes);
-        publishAppBuilder.setObtainVersionFromSC(false);
+        publishAppBuilder.setObtainVersionAutomatically(false);
         given(this.restClientMock.publishApp(eq(TestData.scope), eq(TestData.sysId), eq(TestData.applicationVersion), eq(TestData.devNotes))).willReturn(getFailedResult("error"));
 
         // when
@@ -120,7 +120,7 @@ public class PublishAppBuilderTest {
         publishAppBuilder.setAppScope(TestData.scope);
         publishAppBuilder.setAppSysId((TestData.sysId));
         publishAppBuilder.setDevNotes(TestData.devNotes);
-        publishAppBuilder.setObtainVersionFromSC(null);
+        publishAppBuilder.setObtainVersionAutomatically(null);
         given(this.restClientMock.publishApp(eq(TestData.scope), eq(TestData.sysId), eq(TestData.applicationVersion), eq(TestData.devNotes))).willReturn(getPendingResult());
         given(this.restClientMock.checkProgress()).willReturn(getSuccessfulResult(100,null));
 

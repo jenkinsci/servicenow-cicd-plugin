@@ -3,6 +3,7 @@ package io.jenkins.plugins.servicenow;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.model.AbstractProject;
+import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
@@ -100,7 +101,7 @@ public class ApplyChangesBuilder extends ProgressBuilder {
     }
 
     @Override
-    protected boolean perform(@Nonnull TaskListener taskListener, final Integer progressCheckInterval) {
+    protected boolean perform(Run<?, ?> run, @Nonnull TaskListener taskListener, final Integer progressCheckInterval) {
         boolean result = false;
 
         taskListener.getLogger().println("\nSTART: ServiceNow - Apply changes");

@@ -2,10 +2,9 @@ package io.jenkins.plugins.servicenow.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hudson.util.Secret;
+import io.jenkins.plugins.servicenow.api.model.*;
 import io.jenkins.plugins.servicenow.api.model.Error;
-import io.jenkins.plugins.servicenow.api.model.JsonData;
-import io.jenkins.plugins.servicenow.api.model.Response;
-import io.jenkins.plugins.servicenow.api.model.Result;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -30,6 +29,7 @@ import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static hudson.Util.removeTrailingSlash;
@@ -40,6 +40,10 @@ public class ServiceNowAPIClient {
 
     private String getCICDApiUrl() {
         return removeTrailingSlash(this.apiUrl) + "/api/sn_cicd/";
+    }
+
+    private String getTableApiUrl() {
+        return removeTrailingSlash(this.apiUrl) + "/api/now/table/";
     }
 
     private final String apiUrl;
@@ -149,7 +153,6 @@ public class ServiceNowAPIClient {
         return sendRequest(endpoint, params, null);
     }
 
-
     public Result installApp(final String applicationScope, final String applicationSysId, final String applicationVersion) throws IOException, URISyntaxException {
         final String endpoint = "app_repo/install";
         LOG.debug("ServiceNow API call > installApp");
@@ -175,17 +178,44 @@ public class ServiceNowAPIClient {
     }
 
     public Result activatePlugin(String pluginId) throws IOException, URISyntaxException {
-        final String endpoint = "plugin/"+pluginId+"/activate";
+        final String endpoint = "plugin/" + pluginId + "/activate";
         LOG.debug("ServiceNow API call > activatePlugin");
 
         return sendRequest(endpoint, null, null);
     }
 
     public Result rollbackPlugin(String pluginId) throws IOException, URISyntaxException {
-        final String endpoint = "plugin/"+pluginId+"/rollback";
+        final String endpoint = "plugin/" + pluginId + "/rollback";
         LOG.debug("ServiceNow API call > rollbackPlugin");
 
         return sendRequest(endpoint, null, null);
+    }
+
+    public String getCurrentAppVersion(final String applicationScope, final String systemId) {
+        String endpoint = getTableApiUrl() + "sys_app";
+        if(StringUtils.isNotBlank(systemId)) {
+            endpoint += "/" + systemId + "?sysparm_fields=version";
+            final Result result = sendRequest(endpoint, null);
+            if(result != null && result.getUnboundAttributes().containsKey("version")) {
+                return (String) result.getUnboundAttributes().getOrDefault("version", StringUtils.EMPTY);
+            }
+        } else if(StringUtils.isNotBlank(applicationScope)) {
+            endpoint += "?sysparm_fields=scope,version";
+            final TableResponse response = this.getTable(endpoint, null);
+            if(response != null && response.getUnboundAttributes().containsKey("result")) {
+                return (String) ((List) response.getUnboundAttributes().get("result")).stream()
+                        .filter(record ->
+                                record instanceof HashMap &&
+                                        ((HashMap) record).containsKey("scope") &&
+                                        applicationScope.equals(((HashMap) record).get("scope")))
+                        .map(record -> ((HashMap) record).get("version"))
+                        .findFirst()
+                        .orElse(StringUtils.EMPTY);
+            }
+        } else {
+            throw new IllegalArgumentException("One of arguments (system id or application scope) must be valid!");
+        }
+        return StringUtils.EMPTY;
     }
 
     /**
@@ -226,7 +256,7 @@ public class ServiceNowAPIClient {
         if(result != null) {
             if(ActionStatus.FAILED.getStatus().equals(result.getStatus())) {
                 LOG.warn("Response with failed result came for the request '" + endpoint + "': " + response.toString());
-            } else if(result.getLinks().getProgress() != null) {
+            } else if(result.getLinks() != null && result.getLinks().getProgress() != null) {
                 this.lastActionProgressUrl = result.getLinks().getProgress().getUrl();
             }
         }
@@ -252,6 +282,30 @@ public class ServiceNowAPIClient {
             LOG.error("Wrong URL: " + ex.getMessage());
         } catch(IOException ex) {
             ex.printStackTrace();
+        }
+        return null;
+    }
+
+    private TableResponse getTable(final String endpointPath, final List<NameValuePair> parameters) {
+        try(CloseableHttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(getCredentials()).build()) {
+
+            HttpGet request = new HttpGet();
+            HttpResponse response = sendRequest(client, request, endpointPath, parameters, null); //client.execute(request);
+
+            final int responseStatusCode = response.getStatusLine().getStatusCode();
+            if(responseStatusCode < 200 || responseStatusCode > 202) {
+                LOG.error("GET request [" + request.getURI().toString() + "] call with error status: " + responseStatusCode);
+            } else {
+                this.lastActionProgressUrl = StringUtils.EMPTY;
+            }
+
+            String responseJSON = EntityUtils.toString(response.getEntity());
+            TableResponse result = new ObjectMapper().readValue(responseJSON, TableResponse.class);
+            return result;
+        } catch(URISyntaxException ex) {
+            LOG.error("Wrong URL: " + ex.getMessage());
+        } catch(IOException ex) {
+            LOG.error("GET request [" + endpointPath + "] replied with error!", ex);
         }
         return null;
     }

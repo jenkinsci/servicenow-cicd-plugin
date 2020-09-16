@@ -2,10 +2,7 @@ package io.jenkins.plugins.servicenow;
 
 import hudson.EnvVars;
 import hudson.Extension;
-import hudson.model.AbstractProject;
-import hudson.model.ParameterValue;
-import hudson.model.StringParameterValue;
-import hudson.model.TaskListener;
+import hudson.model.*;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
@@ -77,7 +74,7 @@ public class InstallAppBuilder extends ProgressBuilder {
     }
 
     @Override
-    protected boolean perform(@Nonnull final TaskListener taskListener, final Integer progressCheckInterval) {
+    protected boolean perform(Run<?, ?> run, @Nonnull final TaskListener taskListener, final Integer progressCheckInterval) {
         boolean result = false;
 
         taskListener.getLogger().println("\nSTART: ServiceNow - Install the specified application (version: " + Optional.ofNullable(this.appVersionToInstall).orElse("the latest") + ")");

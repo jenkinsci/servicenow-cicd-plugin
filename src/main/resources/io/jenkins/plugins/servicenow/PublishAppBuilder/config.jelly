@@ -4,7 +4,7 @@
     <f:entry title="${%Version}" field="appVersion">
         <f:textbox clazz="js-servicenow-appVersion"/>
     </f:entry>
-    <f:entry title="${%GetVersionFromSC}" field="obtainVersionFromSC">
+    <f:entry title="${%GetVersionAutomatically}" field="obtainVersionAutomatically">
         <f:checkbox
                 onclick="javascript: if(this.checked) document.querySelector('.js-servicenow-appVersion').disabled='disabled'; else document.querySelector('.js-servicenow-appVersion').disabled=null;"/>
     </f:entry>

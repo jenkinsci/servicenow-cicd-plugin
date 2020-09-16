@@ -3,6 +3,7 @@ package io.jenkins.plugins.servicenow;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.model.AbstractProject;
+import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
@@ -115,7 +116,7 @@ public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
     }
 
     @Override
-    protected boolean perform(@Nonnull final TaskListener taskListener, final Integer progressCheckInterval) {
+    protected boolean perform(Run<?, ?> run, @Nonnull final TaskListener taskListener, final Integer progressCheckInterval) {
         boolean result = false;
 
         taskListener.getLogger().format("%nSTART: ServiceNow - Run test suite '%s' [%s]", this.getTestSuiteName(), this.getTestSuiteSysId());

@@ -6,7 +6,10 @@ import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.*;
+import hudson.model.ParameterValue;
+import hudson.model.ParametersAction;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 import hudson.tasks.Builder;
 import io.jenkins.plugins.servicenow.api.ActionStatus;
 import io.jenkins.plugins.servicenow.api.ServiceNowAPIClient;
@@ -108,7 +111,7 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
         this.restClient = (ServiceNowAPIClient) this.clientFactory.create(run, url, credentialsId);
         final Integer progressCheckInterval = retrieveProgressCheckIntervalParameter(run.getEnvironment((taskListener)));
 
-        boolean success = perform(taskListener, progressCheckInterval);
+        boolean success = perform(run, taskListener, progressCheckInterval);
 
         stopWatch.stop();
         Long durationInMillis = stopWatch.getTotalTimeMillis();
@@ -144,7 +147,7 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
         return parameter == null ? Constants.PROGRESS_CHECK_INTERVAL : parameter.intValue();
     }
 
-    protected abstract boolean perform(@Nonnull final TaskListener taskListener, final Integer progressCheckInterval);
+    protected abstract boolean perform(Run<?, ?> run, @Nonnull final TaskListener taskListener, final Integer progressCheckInterval);
 
     protected void setupBuilderParameters(EnvVars environment) {
         final String globalSNParams = environment.get(ServiceNowParameterDefinition.PARAMETER_NAME);
