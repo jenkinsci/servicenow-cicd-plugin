@@ -235,7 +235,12 @@ public class PublishAppBuilder extends ProgressBuilder {
         return null;
     }
 
-    private String getNextAppVersion(String currentVersion) {
+    /**
+     * Returns next application version based on current version given in the argument.
+     * @param currentVersion Current version of the application
+     * @return Next valid application version.
+     */
+    public static String getNextAppVersion(String currentVersion) {
         if(StringUtils.isNotBlank(currentVersion)) {
             String[] versionNumbers = currentVersion.split("\\.");
             if(versionNumbers.length > 1) {

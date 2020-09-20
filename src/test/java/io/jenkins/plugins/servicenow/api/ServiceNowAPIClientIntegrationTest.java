@@ -1,238 +1,203 @@
 package io.jenkins.plugins.servicenow.api;
 
+import hudson.remoting.Base64;
 import hudson.util.Secret;
+import io.jenkins.plugins.servicenow.Constants;
+import io.jenkins.plugins.servicenow.PublishAppBuilder;
 import io.jenkins.plugins.servicenow.api.model.Result;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-import org.junit.Before;
-import org.junit.Rule;
+import org.junit.Ignore;
 import org.junit.Test;
-import org.mockserver.client.MockServerClient;
-import org.mockserver.junit.MockServerRule;
-import org.mockserver.verify.VerificationTimes;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 
 public class ServiceNowAPIClientIntegrationTest {
 
-    private static final Logger LOG = LogManager.getLogger(ServiceNowAPIClientIntegrationTest.class);
-
-    @Rule
-    public MockServerRule mockServerRule = new MockServerRule(this);
-
-    private static MockServerClient mockServer;
-    private int PORT;
+    private static String HOST_SN = "https://cicdjenkinsappauthor.service-now.com";
+    private static String SYSTEM_ID = "90eb12afdb021010b40a9eb5db9619aa";
+    private static String APP_SCOPE = "x_sofse_cicdjenkin";
+    private static String USER_SN = System.getenv("USERNAME");
+    private static String PASSWORD_SN = System.getenv("PASSWORD");
 
     private ServiceNowAPIClient serviceNowAPIClient;
 
-    private static String HOST = "localhost";
-    private static String USER = "test";
-    private static Secret PASSWORD_MOCK;
-    private static String PROGRESS_ID = "1234";
+    @Test
+    public void testGetCurrentAppVersion_bySysId() {
+        // given
+        final String systemId = SYSTEM_ID;
+        Secret password = Secret.fromString(getPW());
+        serviceNowAPIClient = new ServiceNowAPIClient(HOST_SN, USER_SN, password);
 
-    @Before
-    public void setUp() throws Exception {
-        PORT = mockServerRule.getPort();
-        final String url = "http://" + HOST + ":" + PORT;
-        LOG.info("Mock server started at port: " + PORT);
+        // when
+        final String result = serviceNowAPIClient.getCurrentAppVersion(null, systemId);
 
-        serviceNowAPIClient = new ServiceNowAPIClient(url, USER, PASSWORD_MOCK);
+        // then
+        assertThat(result).isNotBlank();
     }
 
     @Test
-    public void applyChanges() throws IOException, URISyntaxException {
+    public void testGetCurrentAppVersion_byScope() {
         // given
-        String systemId = "testSystemId";
-        mockServer.when(
-                request()
-                        .withMethod("POST")
-                        .withPath("/api/sn_cicd/sc/apply_changes")
-        )
-                .respond(
-                        response()
-                                .withStatusCode(200)
-                                .withBody("{\n" +
-                                        "    \"result\": {\n" +
-                                        "        \"links\": {\n" +
-                                        "            \"progress\": {\n" +
-                                        "                \"id\": \"" + PROGRESS_ID + "\",\n" +
-                                        "                \"url\": \"http://" + HOST + ":" + PORT + "/api/sn_cicd/progress/" + PROGRESS_ID + "\"\n" +
-                                        "            }\n" +
-                                        "        },\n" +
-                                        "        \"status\": \"0\",\n" +
-                                        "        \"status_label\": \"Pending\",\n" +
-                                        "        \"status_message\": \"\",\n" +
-                                        "        \"status_detail\": \"\",\n" +
-                                        "        \"error\": \"\",\n" +
-                                        "        \"percent_complete\": 0\n" +
-                                        "    }\n" +
-                                        "}")
-                );
+        final String scope = APP_SCOPE;
+        Secret password = Secret.fromString(getPW());
+        serviceNowAPIClient = new ServiceNowAPIClient(HOST_SN, USER_SN, password);
+
+        // when
+        final String result = serviceNowAPIClient.getCurrentAppVersion(scope, null);
+
+        // then
+        assertThat(result).isNotBlank();
+    }
+
+    @Test
+    public void testApplyChanges() throws IOException, URISyntaxException {
+        // given
+        final String systemId = SYSTEM_ID;
+        Secret password = Secret.fromString(getPW());
+        serviceNowAPIClient = new ServiceNowAPIClient(HOST_SN, USER_SN, password);
 
         // when
         Result result = serviceNowAPIClient.applyChanges(null, systemId, null);
 
         // then
-        mockServer.verify(
-                request("/api/sn_cicd/sc/apply_changes"), VerificationTimes.exactly(1)
-        );
         assertThat(result).isNotNull();
+        assertThat(result.getError()).isBlank();
         assertThat(result.getStatus()).isEqualTo("0");
-        assertThat(result.getLinks().getProgress().getId()).isEqualTo(PROGRESS_ID);
-        assertThat(result.getLinks().getProgress().getUrl()).contains(HOST, Integer.toString(PORT), PROGRESS_ID);
-        assertThat(serviceNowAPIClient.getLastActionProgressUrl()).endsWith(PROGRESS_ID);
+        assertThat(result.getLinks().getProgress()).isNotNull();
+        assertThat(result.getLinks().getProgress().getUrl()).contains(HOST_SN);
+        assertThat(serviceNowAPIClient.getLastActionProgressUrl()).isEqualTo(result.getLinks().getProgress().getUrl());
     }
 
     @Test
-    public void applyChanges_notAuthorized() throws IOException {
+    public void testCheckProgress() throws IOException, URISyntaxException, InterruptedException {
         // given
-        String systemId = "testSystemId";
-        String errorMessage = "User Not Authenticated";
-        String errorDetail = "Required to provide Auth information";
-        mockServer.when(
-                request()
-                        .withMethod("POST")
-                        .withPath("/api/sn_cicd/sc/apply_changes")
-        )
-                .respond(
-                        response()
-                                .withStatusCode(401)
-                                .withBody("{\"error\":{\"message\":\""+errorMessage+"\",\"detail\":\""+errorDetail+"\"},\"status\":\"failure\"}")
-                );
-
-        // when
-        Result result = null;
-        Exception expectedException = null;
-        try {
-            result = serviceNowAPIClient.applyChanges(null, systemId, null);
-        } catch (Exception ex) {
-            expectedException = ex;
-        }
-
-        // then
-        mockServer.verify(
-                request("/api/sn_cicd/sc/apply_changes"), VerificationTimes.exactly(1)
-        );
-        assertThat(result).isNull();
-        assertThat(expectedException).isNotNull();
-        assertThat(expectedException).isInstanceOf(ServiceNowApiException.class);
-        assertThat(expectedException.getMessage()).isEqualTo(errorMessage);
-        assertThat(((ServiceNowApiException)expectedException).getDetail()).isEqualTo(errorDetail);
-    }
-
-    @Test
-    public void applyChanges_invalidAppSysId() throws IOException, URISyntaxException {
-        // given
-        String systemId = "testSystemId";
-        mockServer.when(
-                request()
-                        .withMethod("POST")
-                        .withPath("/api/sn_cicd/sc/apply_changes")
-        )
-                .respond(
-                        response()
-                                .withStatusCode(404)
-                                .withBody("{\"result\":{\"status\":\"3\",\"status_label\":\"Failed\",\"status_message\":\"\",\"status_detail\":\"\",\"error\":\"Invalid app sys id: "+systemId+"\"}}")
-                );
-
-        // when
+        final String systemId = SYSTEM_ID;
+        Secret password = Secret.fromString(getPW());
+        serviceNowAPIClient = new ServiceNowAPIClient(HOST_SN, USER_SN, password);
         Result result = serviceNowAPIClient.applyChanges(null, systemId, null);
-
-        // then
-        mockServer.verify(
-                request("/api/sn_cicd/sc/apply_changes"), VerificationTimes.exactly(1)
-        );
-        assertThat(result).isNotNull();
-        assertThat(result.getStatus()).isEqualTo("3");
-        assertThat(result.getLinks()).isNull();
-        assertThat(result.getError()).contains(systemId);
-    }
-
-    @Test
-    public void checkProgress() throws IOException, URISyntaxException {
-        // given
-        String commitId = "1590365066990cfe14b2f974cfd9db33b4c49be6";
-        String PROGRESS_ID2 = "5678";
-        mockServer.when(
-                request()
-                        .withMethod("POST")
-                        .withPath("/api/sn_cicd/sc/apply_changes")
-        )
-                .respond(
-                        response()
-                                .withStatusCode(200)
-                                .withBody("{\n" +
-                                        "    \"result\": {\n" +
-                                        "        \"links\": {\n" +
-                                        "            \"progress\": {\n" +
-                                        "                \"id\": \"" + PROGRESS_ID + "\",\n" +
-                                        "                \"url\": \"http://" + HOST + ":" + PORT + "/api/sn_cicd/progress/" + PROGRESS_ID + "\"\n" +
-                                        "            }\n" +
-                                        "        },\n" +
-                                        "        \"status\": \"0\",\n" +
-                                        "        \"status_label\": \"Pending\",\n" +
-                                        "        \"status_message\": \"\",\n" +
-                                        "        \"status_detail\": \"\",\n" +
-                                        "        \"error\": \"\",\n" +
-                                        "        \"percent_complete\": 0\n" +
-                                        "    }\n" +
-                                        "}")
-                );
-
-        mockServer.when(
-                request()
-                        .withMethod("GET")
-                        .withPath("/api/sn_cicd/progress/" + PROGRESS_ID)
-        )
-                .respond(
-                        response()
-                                .withStatusCode(200)
-                                .withBody("{\n" +
-                                        "    \"result\": {\n" +
-                                        "        \"links\": {\n" +
-                                        "            \"progress\": {\n" +
-                                        "                \"id\": \"" + PROGRESS_ID2 + "\",\n" +
-                                        "                \"url\": \"http://" + HOST + ":" + PORT + "/api/sn_cicd/progress/" + PROGRESS_ID2 + "\"\n" +
-                                        "            }\n" +
-                                        "        },\n" +
-                                        "        \"status\": \"2\",\n" +
-                                        "        \"status_label\": \"Successful\",\n" +
-                                        "        \"status_message\": \"This operation succeeded\",\n" +
-                                        "        \"status_detail\": \"Successfully applied commit "+commitId+" from source control\",\n" +
-                                        "        \"error\": \"\",\n" +
-                                        "        \"percent_complete\": 100\n" +
-                                        "    }\n" +
-                                        "}")
-                );
+        assertThat(serviceNowAPIClient.getLastActionProgressUrl()).isEqualTo(result.getLinks().getProgress().getUrl());
+        Result progressResult = null;
 
         // when
-        Result result = serviceNowAPIClient.applyChanges(null, "1234", null);
-        Result progressResult = serviceNowAPIClient.checkProgress();
+        do {
+            if(progressResult != null) {
+                Thread.sleep(Constants.PROGRESS_CHECK_INTERVAL);
+            }
+            progressResult = serviceNowAPIClient.checkProgress();
+            assertThat(progressResult).isNotNull();
+        } while(progressResult.getStatus() == "1");
 
         // then
-        mockServer.verify(
-                request("/api/sn_cicd/sc/apply_changes"), VerificationTimes.exactly(1)
-        );
-        assertThat(result).isNotNull();
-        assertThat(result.getStatus()).isEqualTo("0");
-        assertThat(result.getLinks().getProgress().getId()).isEqualTo(PROGRESS_ID);
-        assertThat(result.getLinks().getProgress().getUrl()).contains(HOST, Integer.toString(PORT), PROGRESS_ID);
-
-        mockServer.verify(
-                request("/api/sn_cicd/progress/" + PROGRESS_ID), VerificationTimes.exactly(1)
-        );
         assertThat(progressResult).isNotNull();
-        assertThat(progressResult.getStatus()).isEqualTo("2");
-        assertThat(progressResult.getLinks().getProgress().getId()).isEqualTo(PROGRESS_ID2);
-        assertThat(progressResult.getLinks().getProgress().getUrl()).contains(HOST, Integer.toString(PORT), PROGRESS_ID2);
-        assertThat(progressResult.getStatusDetail()).contains(commitId);
         assertThat(progressResult.getError()).isBlank();
-        assertThat(progressResult.getPercentComplete()).isEqualTo(100);
-        assertThat(serviceNowAPIClient.getLastActionProgressUrl()).endsWith(PROGRESS_ID2);
+        assertThat(progressResult.getStatus()).isEqualTo("2");
+        assertThat(progressResult.getPercentComplete()).isGreaterThanOrEqualTo(0);
+    }
+
+    @Test
+    public void testPublishApplication() throws IOException, URISyntaxException {
+        // given
+        final String systemId = SYSTEM_ID;
+        Secret password = Secret.fromString(getPW());
+        serviceNowAPIClient = new ServiceNowAPIClient(HOST_SN, USER_SN, password);
+        String applicationVersion = getNextApplicationVersionToBePublished(serviceNowAPIClient, systemId);
+        validateApplicationVersion(applicationVersion);
+
+        // when
+        Result result = serviceNowAPIClient.publishApp(null, systemId, applicationVersion, "integration test of servicenow-cicd jenkins plugin");
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getError()).isBlank();
+        assertThat(result.getStatus()).isEqualTo("0");
+        assertThat(result.getLinks().getProgress()).isNotNull();
+        assertThat(result.getLinks().getProgress().getUrl()).contains(HOST_SN);
+        assertThat(serviceNowAPIClient.getLastActionProgressUrl()).isEqualTo(result.getLinks().getProgress().getUrl());
+    }
+
+    @Test
+    @Ignore("Result of application installation may vary depending on previous requests.")
+    public void testInstallApplication() throws IOException, URISyntaxException {
+        // given
+        final String systemId = SYSTEM_ID;
+        Secret password = Secret.fromString(getPW());
+        serviceNowAPIClient = new ServiceNowAPIClient(HOST_SN, USER_SN, password);
+
+        // when
+        Result result = serviceNowAPIClient.installApp(null, systemId, null);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getError()).isBlank();
+        assertThat(result.getStatus()).isEqualTo("0");
+        assertThat(result.getLinks().getProgress()).isNotNull();
+        assertThat(result.getLinks().getProgress().getUrl()).contains(HOST_SN);
+        assertThat(serviceNowAPIClient.getLastActionProgressUrl()).isEqualTo(result.getLinks().getProgress().getUrl());
+    }
+
+    @Test
+    @Ignore("Impossible to test it without full CI/CD workflow. The request will be tested in another integration test.")
+    public void testRollbackApplication() {}
+
+    @Test
+    public void testActivatePlugin() throws IOException, URISyntaxException {
+        // given
+        String pluginName = "com.servicenow_now_calendar";
+        Secret password = Secret.fromString(getPW());
+        serviceNowAPIClient = new ServiceNowAPIClient(HOST_SN, USER_SN, password);
+
+        // when
+        Result result = serviceNowAPIClient.activatePlugin(pluginName);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getError()).isBlank();
+        assertThat(result.getStatus()).isNotEqualTo("3");
+        assertThat(result.getStatus()).isNotEqualTo("4");
+        if(ActionStatus.PENDING.getStatus().equals(result.getStatus()) || ActionStatus.RUNNING.getStatus().equals(result.getStatus())) {
+            assertThat(result.getLinks().getProgress()).isNotNull();
+            assertThat(result.getLinks().getProgress().getUrl()).contains(HOST_SN);
+            assertThat(serviceNowAPIClient.getLastActionProgressUrl()).isEqualTo(result.getLinks().getProgress().getUrl());
+        }
+    }
+
+    @Test
+    @Ignore("Flawed API endpoint")
+    public void testRollbackPlugin() throws IOException, URISyntaxException {
+        // given
+        String pluginName = "com.servicenow_now_calendar";
+        Secret password = Secret.fromString(getPW());
+        serviceNowAPIClient = new ServiceNowAPIClient(HOST_SN, USER_SN, password);
+
+        // when
+        Result result = serviceNowAPIClient.rollbackPlugin(pluginName);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getError()).isBlank();
+        assertThat(result.getStatus()).isNotEqualTo("3");
+        assertThat(result.getStatus()).isNotEqualTo("4");
+        if(ActionStatus.PENDING.getStatus().equals(result.getStatus()) || ActionStatus.RUNNING.getStatus().equals(result.getStatus())) {
+            assertThat(result.getLinks().getProgress()).isNotNull();
+            assertThat(result.getLinks().getProgress().getUrl()).contains(HOST_SN);
+            assertThat(serviceNowAPIClient.getLastActionProgressUrl()).isEqualTo(result.getLinks().getProgress().getUrl());
+        }
+    }
+
+    private String getNextApplicationVersionToBePublished(final ServiceNowAPIClient serviceNowAPIClient, String appSystemId) {
+        final String currentVersion = serviceNowAPIClient.getCurrentAppVersion(null, appSystemId);
+        validateApplicationVersion(currentVersion);
+        return PublishAppBuilder.getNextAppVersion(currentVersion);
+    }
+
+    private void validateApplicationVersion(final String applicationVersion) {
+        assertThat(applicationVersion).isNotBlank();
+        assertThat(applicationVersion.split("\\.")).hasSize(3);
+    }
+
+    private String getPW() {
+        return new String(Base64.decode(PASSWORD_SN));
     }
 }
