@@ -17,6 +17,7 @@ import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -51,6 +52,7 @@ public class SNStepsIntegrationTest {
     }
 
     @Test
+    @Ignore
     public void testInstallAppWithEmptyCredentials() throws Exception {
         String agentLabel = "my-agent";
         jenkins.createOnlineSlave(Label.get(agentLabel));
@@ -79,6 +81,7 @@ public class SNStepsIntegrationTest {
     }
 
     @Test
+    @Ignore
     public void testInstallAppWithCredentials() throws Exception {
         String agentLabel = "my-agent";
         jenkins.createOnlineSlave(Label.get(agentLabel));
@@ -108,6 +111,7 @@ public class SNStepsIntegrationTest {
     }
 
     @Test
+    @Ignore
     public void testInstallTestRollbackAppWithPlugin() throws Exception {
         String agentLabel = "my-agent";
         jenkins.createOnlineSlave(Label.get(agentLabel));

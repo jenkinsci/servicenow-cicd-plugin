@@ -24,6 +24,7 @@ public class ServiceNowAPIClientIntegrationTest {
     private ServiceNowAPIClient serviceNowAPIClient;
 
     @Test
+    @Ignore
     public void testGetCurrentAppVersion_bySysId() {
         // given
         final String systemId = SYSTEM_ID;
@@ -38,6 +39,7 @@ public class ServiceNowAPIClientIntegrationTest {
     }
 
     @Test
+    @Ignore
     public void testGetCurrentAppVersion_byScope() {
         // given
         final String scope = APP_SCOPE;
@@ -52,6 +54,7 @@ public class ServiceNowAPIClientIntegrationTest {
     }
 
     @Test
+    @Ignore
     public void testApplyChanges() throws IOException, URISyntaxException {
         // given
         final String systemId = SYSTEM_ID;
@@ -71,6 +74,7 @@ public class ServiceNowAPIClientIntegrationTest {
     }
 
     @Test
+    @Ignore
     public void testCheckProgress() throws IOException, URISyntaxException, InterruptedException {
         // given
         final String systemId = SYSTEM_ID;
@@ -97,6 +101,7 @@ public class ServiceNowAPIClientIntegrationTest {
     }
 
     @Test
+    @Ignore
     public void testPublishApplication() throws IOException, URISyntaxException {
         // given
         final String systemId = SYSTEM_ID;
@@ -142,6 +147,7 @@ public class ServiceNowAPIClientIntegrationTest {
     public void testRollbackApplication() {}
 
     @Test
+    @Ignore
     public void testActivatePlugin() throws IOException, URISyntaxException {
         // given
         String pluginName = "com.servicenow_now_calendar";
