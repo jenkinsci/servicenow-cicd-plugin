@@ -17,7 +17,6 @@ import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -52,7 +51,6 @@ public class SNStepsIntegrationTest {
     }
 
     @Test
-    @Ignore
     public void testInstallAppWithEmptyCredentials() throws Exception {
         String agentLabel = "my-agent";
         jenkins.createOnlineSlave(Label.get(agentLabel));
@@ -81,7 +79,6 @@ public class SNStepsIntegrationTest {
     }
 
     @Test
-    @Ignore
     public void testInstallAppWithCredentials() throws Exception {
         String agentLabel = "my-agent";
         jenkins.createOnlineSlave(Label.get(agentLabel));
@@ -111,14 +108,16 @@ public class SNStepsIntegrationTest {
     }
 
     @Test
-    @Ignore
-    public void testInstallAndTestApp() throws Exception {
+    public void testInstallTestRollbackAppWithPlugin() throws Exception {
         String agentLabel = "my-agent";
         jenkins.createOnlineSlave(Label.get(agentLabel));
         WorkflowJob job = jenkins.createProject(WorkflowJob.class, "testJob");
         String script = "node {\n" +
+                " snActivatePlugin url: '" + HOST_INSTALLATION + "', credentialsId: " + CREDENTIALS_ID + ", pluginId: 'com.servicenow_now_calendar'\n" +
                 " snInstallApp()\n" +
                 " snRunTestSuite browserName: 'Firefox', osName: 'Windows', osVersion: '10', testSuiteName: 'My CHG:Change Management', withResults: true\n" +
+                " snRollbackApp()\n" +
+                " snActivatePlugin url: '" + HOST_INSTALLATION + "', credentialsId: " + CREDENTIALS_ID + ", pluginId: 'com.servicenow_now_calendar'\n" +
                 "}";
         String credentialsId = CREDENTIALS_ID;
 
@@ -138,8 +137,11 @@ public class SNStepsIntegrationTest {
         job.addProperty(new ParametersDefinitionProperty(snParams));
         final WorkflowRun build = jenkins.assertBuildStatusSuccess(job.scheduleBuild2(0));
         LOG.info(jenkins.getLog(build));
+        jenkins.assertLogContains("START: ServiceNow - Activate the plugin com.servicenow_now_calendar", build);
         jenkins.assertLogContains("START: ServiceNow - Install the specified application", build);
         jenkins.assertLogContains("START: ServiceNow - Run test suite", build);
+        jenkins.assertLogContains("START: ServiceNow - Roll back the specified application", build);
+        jenkins.assertLogContains("START: ServiceNow - Roll back the plugin com.servicenow_now_calendar", build);
     }
 
     private String getPW() {
