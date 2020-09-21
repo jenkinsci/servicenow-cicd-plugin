@@ -1,4 +1,4 @@
-withCredentials( [usernamePassword( credentialsId: '74b20a14-1cc5-48de-8d54-6274ecc81da4',
+withCredentials( [usernamePassword( credentialsId: '482fa2bf-73b5-489a-8f9e-62004e01f10b',
                     usernameVariable: 'USERNAME',
                     passwordVariable: 'PASSWORD')]) {
     buildPlugin()
