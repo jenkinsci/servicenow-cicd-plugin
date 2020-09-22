@@ -29,6 +29,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Build step responsible for publishing the specified application and all of its artifacts to the application repository.
+ * See: <a href="https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/cicd-api#cicd-POST-app_repo-publish?navFilter=sn_cicd">
+ *     API documentation</a>.
+ */
 public class PublishAppBuilder extends ProgressBuilder {
 
     private static final Logger LOG = LogManager.getLogger(PublishAppBuilder.class);

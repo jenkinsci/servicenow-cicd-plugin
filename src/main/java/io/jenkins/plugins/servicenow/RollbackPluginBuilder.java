@@ -22,6 +22,11 @@ import org.kohsuke.stapler.QueryParameter;
 import javax.annotation.Nonnull;
 import java.net.UnknownHostException;
 
+/**
+ * Build step rolls back the specified plugin to the previous installed version.
+ * See: <a href="https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/cicd-api#cicd-POST-plugin-rollbackdita?navFilter=sn_cicd">
+ *  *     API documentation</a>.
+ */
 public class RollbackPluginBuilder extends ProgressBuilder {
 
     private static final Logger LOG = LogManager.getLogger(RollbackPluginBuilder.class);

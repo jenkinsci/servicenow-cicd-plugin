@@ -1,6 +1,5 @@
 package io.jenkins.plugins.servicenow.api;
 
-import hudson.remoting.Base64;
 import hudson.util.Secret;
 import io.jenkins.plugins.servicenow.Constants;
 import io.jenkins.plugins.servicenow.PublishAppBuilder;
@@ -91,7 +90,7 @@ public class ServiceNowAPIClientIntegrationTest {
             }
             progressResult = serviceNowAPIClient.checkProgress();
             assertThat(progressResult).isNotNull();
-        } while(progressResult.getStatus() == "1");
+        } while("1".equals(progressResult.getStatus()));
 
         // then
         assertThat(progressResult).isNotNull();
@@ -143,7 +142,7 @@ public class ServiceNowAPIClientIntegrationTest {
     }
 
     @Test
-    @Ignore("Impossible to test it without full CI/CD workflow. The request will be tested in another integration test.")
+    @Ignore("Impossible to test it without full CI/CD workflow. The request will be tested in another integration test {@link SNStepsIntegrationTest}.")
     public void testRollbackApplication() {}
 
     @Test
@@ -204,6 +203,6 @@ public class ServiceNowAPIClientIntegrationTest {
     }
 
     private String getPW() {
-        return new String(Base64.decode(PASSWORD_SN));
+        return PASSWORD_SN;
     }
 }

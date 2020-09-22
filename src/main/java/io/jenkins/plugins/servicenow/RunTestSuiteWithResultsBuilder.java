@@ -25,6 +25,21 @@ import org.kohsuke.stapler.QueryParameter;
 import javax.annotation.Nonnull;
 import java.text.MessageFormat;
 
+/**
+ * Build step runs a specified automated test suite.
+ * See:<ul>
+ * <li>
+ *     <a href="https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/cicd-api#cicd-POST-testsuite-run?navFilter=sn_cicd">
+ *         API doc for run test suite
+ *     </a>
+ * </li>
+ * <li>
+ *     <a href="https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/cicd-api#cicd-GET-testsuite-results?navFilter=sn_cicd">
+ *         API doc for get results
+ *     </a>
+ * </li>
+ * </ul>
+ */
 public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
 
     private static final Logger LOG = LogManager.getLogger(RunTestSuiteWithResultsBuilder.class);
@@ -119,7 +134,7 @@ public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
     protected boolean perform(Run<?, ?> run, @Nonnull final TaskListener taskListener, final Integer progressCheckInterval) {
         boolean result = false;
 
-        taskListener.getLogger().format("%nSTART: ServiceNow - Run test suite '%s' [%s]", this.getTestSuiteName(), this.getTestSuiteSysId());
+        taskListener.getLogger().format("\nSTART: ServiceNow - Run test suite '%s' [%s]", this.getTestSuiteName(), this.getTestSuiteSysId());
 
         Result serviceNowResult = null;
         try {
@@ -142,7 +157,7 @@ public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
 
             if(!ActionStatus.FAILED.getStatus().equals(serviceNowResult.getStatus())) {
                 if(!ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
-                    taskListener.getLogger().format("%nChecking progress");
+                    taskListener.getLogger().format("Checking progress");
                     try {
                         serviceNowResult = checkProgress(taskListener.getLogger(), progressCheckInterval);
                     } catch(InterruptedException e) {
@@ -223,13 +238,13 @@ public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
 
     private String formatTestResults(Result serviceNowResult) {
         return MessageFormat.format(
-                "\tTest suite name:\t{0}%n" +
-                        "\tStatus:\t\t{1}%n" +
-                        "\tDuration:\t{2}%n" +
-                        "\tSuccessfully rolledup tests:\t{3}%n" +
-                        "\tFailed rolledup tests:\t{4}%n" +
-                        "\tSkipped rolledup tests:\t{5}%n" +
-                        "\tRolledup tests with error:\t{6}%n" +
+                "\tTest suite name:\t{0}\n" +
+                        "\tStatus:\t\t{1}\n" +
+                        "\tDuration:\t{2}\n" +
+                        "\tSuccessfully rolledup tests:\t{3}\n" +
+                        "\tFailed rolledup tests:\t{4}\n" +
+                        "\tSkipped rolledup tests:\t{5}\n" +
+                        "\tRolledup tests with error:\t{6}\n" +
                         "\tLink to the result: {7}",
                 getValue(serviceNowResult, ResponseUnboundParameters.TestResults.name),
                 getValue(serviceNowResult, ResponseUnboundParameters.TestResults.status),

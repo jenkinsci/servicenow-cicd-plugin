@@ -14,9 +14,6 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
-import javax.servlet.ServletException;
-import java.io.IOException;
-
 public class ServiceNowParameterDefinition extends ParameterDefinition implements Comparable<ServiceNowParameterDefinition> {
 
     private static final long serialVersionUID = -3495528189247664707L;
@@ -122,7 +119,17 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
     @Override
     public ParameterValue createValue(StaplerRequest staplerRequest) {
         ServiceNowParameterValue snParameterValue = new ServiceNowParameterValue(PARAMETER_NAME,
-                "{\"publishedAppVersion\":\"\", \"rollbackAppVersion\":\"\"}"); // create parameter with fields that are used between build steps
+                "{\"name\":\""+PARAMETER_NAME+"\"," +
+                "\"" + PARAMS_NAMES.description + "\":\"" + getDescription() + "\"," +
+                "\"" + PARAMS_NAMES.credentialsForPublishedApp + "\":\"" + credentialsForPublishedApp + "\"," +
+                "\"" + PARAMS_NAMES.instanceForPublishedAppUrl + "\":\"" + instanceForPublishedAppUrl + "\"," +
+                "\"" + PARAMS_NAMES.credentialsForInstalledApp + "\":\"" + credentialsForInstalledApp + "\"," +
+                "\"" + PARAMS_NAMES.instanceForInstalledAppUrl + "\":\"" + instanceForInstalledAppUrl + "\"," +
+                "\"" + PARAMS_NAMES.sysId + "\":\"" + sysId + "\"," +
+                "\"" + PARAMS_NAMES.appScope + "\":\"" + appScope + "\"," +
+                "\"" + PARAMS_NAMES.publishedAppVersion + "\":\"" + publishedAppVersion + "\"," +
+                "\"" + PARAMS_NAMES.rollbackAppVersion + "\":\"" + rollbackAppVersion + "\"," +
+                "\"" + PARAMS_NAMES.progressCheckInterval + "\":\"" + progressCheckInterval + "\"}"); // create parameter with fields that are used between build steps
         return snParameterValue;
     }
 
@@ -155,8 +162,7 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
             return Messages.ServiceNowParameterDefinition_DescriptorImpl_DisplayName();
         }
 
-        public FormValidation doCheckInstanceForPublishedAppUrl(@QueryParameter String value)
-                throws IOException, ServletException {
+        public FormValidation doCheckInstanceForPublishedAppUrl(@QueryParameter String value) {
 
             if(StringUtils.isNotBlank(value)) {
                 if(!Validator.validateInstanceUrl(value)) {
@@ -166,8 +172,7 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
             return FormValidation.ok();
         }
 
-        public FormValidation doCheckInstanceForInstalledAppUrl(@QueryParameter String value)
-                throws IOException, ServletException {
+        public FormValidation doCheckInstanceForInstalledAppUrl(@QueryParameter String value) {
 
             if(StringUtils.isNotBlank(value)) {
                 if(!Validator.validateInstanceUrl(value)) {
@@ -177,8 +182,7 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
             return FormValidation.ok();
         }
 
-        public FormValidation doCheckProgressCheckInterval(@QueryParameter Integer value)
-                throws IOException, ServletException {
+        public FormValidation doCheckProgressCheckInterval(@QueryParameter Integer value) {
 
             if(value != null) {
                 if(value < 100) {

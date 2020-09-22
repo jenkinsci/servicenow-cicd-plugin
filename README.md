@@ -33,6 +33,7 @@ This plugin integrates with Jenkins the [Now Platform from ServiceNow](https://w
     + [Build steps](#build-steps-1)
     + [ServiceNow Parameters](#servicenow-parameters)
     + [Samples](#samples)
+- [Integration tests](#integration-tests)
 - [Troubleshouting](#troubleshouting)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
@@ -295,6 +296,56 @@ pipeline {
 }
 ```
 Link to the [example](examples/pipeline-script-3.groovy).
+
+## Integration tests
+Integration tests using the NOW's API are located in two classes: `ServiceNowAPIClientIntegrationTest` and `SNStepsIntegrationTest`.
+All of the tests have the annotation `Ignore`, because they are not reliable for daily testing and require credentials.
+Following steps should be done to activate integration tests:
+* remove the annotation `Ignore` from all tests you want to run
+* setup NOW's API credentials by setting up following environment variables `USERNAME` and `PASSWORD` (urls of appropriate instances are already configured in test classes, what can be also changed manually in the code).
+  This setup can be done in two ways:
+  * (1) creating pipeline scripting on private Jenkins instance with junit tests execution:
+  ```groovy
+  pipeline {
+      agent any
+  
+      environment {
+              USERNAME = 'api-username'
+              PASSWORD = 'api-password'
+          }
+  
+      tools {
+          // Install the Maven version configured as "M3" and add it to the path.
+          maven "M3"
+      }
+  
+      stages {
+          stage('Test') {
+              steps {
+                  git url: 'https://github.com/jenkinsci/servicenow-cicd-plugin.git'
+                  
+                  // Run Maven on a Unix agent.
+                  sh "mvn -Dmaven.test.failure.ignore=true test"
+  
+                  // To run Maven on a Windows agent, use
+                  // bat "mvn -Dmaven.test.failure.ignore=true test"
+              }
+  
+              post {
+                  // If Maven was able to run the tests, even if some of the test
+                  // failed, record the test results and archive the jar file.
+                  success {
+                      junit '**/target/surefire-reports/TEST-*.xml'
+                      archiveArtifacts 'target/*.jar'
+                  }
+              }
+          }
+      }
+  }
+  ```
+  * (2) together with `buildPlugin` in _Jenkinsfile_ (eg. on ci.jenkins.io)
+      * create global credentials with user name and password on Jenkins instance
+      * uncomment lines in _Jenkinsfile_ and replace the `credentialsId` value `482fa2bf-73b5-489a-8f9e-62004e01f10b` by the ID of newly created credentials
 
 ## Troubleshouting
 Known issues:
