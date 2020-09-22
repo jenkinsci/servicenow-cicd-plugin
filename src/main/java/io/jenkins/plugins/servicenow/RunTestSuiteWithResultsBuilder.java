@@ -134,7 +134,7 @@ public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
     protected boolean perform(Run<?, ?> run, @Nonnull final TaskListener taskListener, final Integer progressCheckInterval) {
         boolean result = false;
 
-        taskListener.getLogger().format("\nSTART: ServiceNow - Run test suite '%s' [%s]", this.getTestSuiteName(), this.getTestSuiteSysId());
+        taskListener.getLogger().printf("%nSTART: ServiceNow - Run test suite '%s' [%s]", this.getTestSuiteName(), this.getTestSuiteSysId());
 
         Result serviceNowResult = null;
         try {
