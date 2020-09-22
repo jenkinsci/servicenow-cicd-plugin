@@ -27,9 +27,9 @@ public class ServiceNowParameterDefinitionTest extends TestCase {
 
         JSONObject resultValue = JSONObject.fromObject(result.getValue());
         assertThat(resultValue.containsKey(ServiceNowParameterDefinition.PARAMS_NAMES.publishedAppVersion)).isTrue();
-        assertThat((String) resultValue.get(ServiceNowParameterDefinition.PARAMS_NAMES.publishedAppVersion)).isBlank();
+        assertThat(resultValue.getString(ServiceNowParameterDefinition.PARAMS_NAMES.publishedAppVersion)).isBlank();
         assertThat(resultValue.containsKey(ServiceNowParameterDefinition.PARAMS_NAMES.rollbackAppVersion)).isTrue();
-        assertThat((String) resultValue.get(ServiceNowParameterDefinition.PARAMS_NAMES.rollbackAppVersion)).isBlank();
+        assertThat(resultValue.getString(ServiceNowParameterDefinition.PARAMS_NAMES.rollbackAppVersion)).isBlank();
     }
 
     @Test

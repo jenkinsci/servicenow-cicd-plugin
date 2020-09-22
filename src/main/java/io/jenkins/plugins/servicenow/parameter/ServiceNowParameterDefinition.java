@@ -1,5 +1,6 @@
 package io.jenkins.plugins.servicenow.parameter;
 
+import com.iwombat.util.StringUtil;
 import hudson.Extension;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
@@ -7,6 +8,7 @@ import hudson.util.FormValidation;
 import io.jenkins.plugins.servicenow.Constants;
 import io.jenkins.plugins.servicenow.Messages;
 import io.jenkins.plugins.servicenow.utils.Validator;
+import jnr.ffi.annotations.In;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
@@ -120,16 +122,16 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
     public ParameterValue createValue(StaplerRequest staplerRequest) {
         ServiceNowParameterValue snParameterValue = new ServiceNowParameterValue(PARAMETER_NAME,
                 "{\"name\":\""+PARAMETER_NAME+"\"," +
-                "\"" + PARAMS_NAMES.description + "\":\"" + getDescription() + "\"," +
-                "\"" + PARAMS_NAMES.credentialsForPublishedApp + "\":\"" + credentialsForPublishedApp + "\"," +
-                "\"" + PARAMS_NAMES.instanceForPublishedAppUrl + "\":\"" + instanceForPublishedAppUrl + "\"," +
-                "\"" + PARAMS_NAMES.credentialsForInstalledApp + "\":\"" + credentialsForInstalledApp + "\"," +
-                "\"" + PARAMS_NAMES.instanceForInstalledAppUrl + "\":\"" + instanceForInstalledAppUrl + "\"," +
-                "\"" + PARAMS_NAMES.sysId + "\":\"" + sysId + "\"," +
-                "\"" + PARAMS_NAMES.appScope + "\":\"" + appScope + "\"," +
-                "\"" + PARAMS_NAMES.publishedAppVersion + "\":\"" + publishedAppVersion + "\"," +
-                "\"" + PARAMS_NAMES.rollbackAppVersion + "\":\"" + rollbackAppVersion + "\"," +
-                "\"" + PARAMS_NAMES.progressCheckInterval + "\":\"" + progressCheckInterval + "\"}"); // create parameter with fields that are used between build steps
+                "\"" + PARAMS_NAMES.description + "\":\"" + getSafeValue(getDescription()) + "\"," +
+                "\"" + PARAMS_NAMES.credentialsForPublishedApp + "\":\"" + getSafeValue(credentialsForPublishedApp) + "\"," +
+                "\"" + PARAMS_NAMES.instanceForPublishedAppUrl + "\":\"" + getSafeValue(instanceForPublishedAppUrl) + "\"," +
+                "\"" + PARAMS_NAMES.credentialsForInstalledApp + "\":\"" + getSafeValue(credentialsForInstalledApp) + "\"," +
+                "\"" + PARAMS_NAMES.instanceForInstalledAppUrl + "\":\"" + getSafeValue(instanceForInstalledAppUrl) + "\"," +
+                "\"" + PARAMS_NAMES.sysId + "\":\"" + getSafeValue(sysId) + "\"," +
+                "\"" + PARAMS_NAMES.appScope + "\":\"" + getSafeValue(appScope) + "\"," +
+                "\"" + PARAMS_NAMES.publishedAppVersion + "\":\"" + getSafeValue(publishedAppVersion) + "\"," +
+                "\"" + PARAMS_NAMES.rollbackAppVersion + "\":\"" + getSafeValue(rollbackAppVersion) + "\"," +
+                "\"" + PARAMS_NAMES.progressCheckInterval + "\":\"" + getSafeValue(progressCheckInterval) + "\"}"); // create parameter with fields that are used between build steps
         return snParameterValue;
     }
 
@@ -147,6 +149,14 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
                 o.getString(PARAMS_NAMES.rollbackAppVersion),
                 o.getInt(PARAMS_NAMES.progressCheckInterval)
         );
+    }
+
+    private String getSafeValue(final String value) {
+        return value != null ? value : StringUtils.EMPTY;
+    }
+
+    private String getSafeValue(final Integer value) {
+        return value != null ? value.toString() : StringUtils.EMPTY;
     }
 
     @Override
