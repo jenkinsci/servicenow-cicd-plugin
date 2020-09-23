@@ -28,8 +28,7 @@ import java.net.UnknownHostException;
 
 /**
  * Build step initiates a rollback of a specified application to a specified version.
- * See: <a href="https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/cicd-api#cicd-POST-app_repo-rollback?navFilter=sn_cicd">
- *     API documentation</a>.
+ * See API documentation: https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/cicd-api#cicd-POST-app_repo-rollback?navFilter=sn_cicd
  */
 public class RollbackAppBuilder extends ProgressBuilder {
 

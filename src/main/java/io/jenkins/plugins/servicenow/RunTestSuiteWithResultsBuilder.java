@@ -29,14 +29,10 @@ import java.text.MessageFormat;
  * Build step runs a specified automated test suite.
  * See:<ul>
  * <li>
- *     <a href="https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/cicd-api#cicd-POST-testsuite-run?navFilter=sn_cicd">
- *         API doc for run test suite
- *     </a>
+ *         API doc for run test suite: https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/cicd-api#cicd-POST-testsuite-run?navFilter=sn_cicd
  * </li>
  * <li>
- *     <a href="https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/cicd-api#cicd-GET-testsuite-results?navFilter=sn_cicd">
- *         API doc for get results
- *     </a>
+ *     API doc for get results https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/cicd-api#cicd-GET-testsuite-results?navFilter=sn_cicd
  * </li>
  * </ul>
  */

@@ -29,8 +29,7 @@ import java.util.Optional;
 
 /**
  * Build step used for installation of an application.
- * See: <a href="https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/cicd-api#cicd-POST-app_repo-install?navFilter=sn_cicd">
- *     API documentation</a>.
+ * See API documentation: https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/cicd-api#cicd-POST-app_repo-install?navFilter=sn_cicd
  */
 public class InstallAppBuilder extends ProgressBuilder {
 

@@ -31,8 +31,7 @@ import java.util.stream.Collectors;
 
 /**
  * Build step responsible for publishing the specified application and all of its artifacts to the application repository.
- * See: <a href="https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/cicd-api#cicd-POST-app_repo-publish?navFilter=sn_cicd">
- *     API documentation</a>.
+ * See API documentation: https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/cicd-api#cicd-POST-app_repo-publish?navFilter=sn_cicd
  */
 public class PublishAppBuilder extends ProgressBuilder {
 

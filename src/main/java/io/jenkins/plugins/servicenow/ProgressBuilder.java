@@ -30,8 +30,7 @@ import java.util.List;
 
 /**
  * Base class of other build step classes checking a progress of the CI/CD function associated with a passed-in progress ID.
- * See: <a href="https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/cicd-api#cicd-GET-progress?navFilter=sn_cicd">
- *  *     API documentation</a>.
+ * See API documentation: https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/cicd-api#cicd-GET-progress?navFilter=sn_cicd
  */
 public abstract class ProgressBuilder extends Builder implements SimpleBuildStep {
 

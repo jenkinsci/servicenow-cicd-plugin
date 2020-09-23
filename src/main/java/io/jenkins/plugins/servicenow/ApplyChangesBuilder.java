@@ -26,8 +26,7 @@ import java.net.UnknownHostException;
 
 /**
  * Build step responsible for applying changes from a remote source control to a specified local application.
- * See: <a href="https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/cicd-api#cicd-POST-sc-apply_changes?navFilter=sn_cicd">
- *     API documentation</a>.
+ * See API documentation: https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/cicd-api#cicd-POST-sc-apply_changes?navFilter=sn_cicd
  */
 public class ApplyChangesBuilder extends ProgressBuilder {
 
