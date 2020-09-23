@@ -26,6 +26,11 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.net.UnknownHostException;
 
+/**
+ * Build step initiates a rollback of a specified application to a specified version.
+ * See: <a href="https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/cicd-api#cicd-POST-app_repo-rollback?navFilter=sn_cicd">
+ *     API documentation</a>.
+ */
 public class RollbackAppBuilder extends ProgressBuilder {
 
     private static final Logger LOG = LogManager.getLogger(RollbackAppBuilder.class);
@@ -141,7 +146,7 @@ public class RollbackAppBuilder extends ProgressBuilder {
     protected void setupBuilderParameters(EnvVars environment) {
         super.setupBuilderParameters(environment);
 
-        // valid for version <= 0.92
+        // valid for version <= 0.91
         if(StringUtils.isBlank(this.appScope)) {
             this.appScope = environment.get(BuildParameters.appScope);
         }
@@ -152,7 +157,7 @@ public class RollbackAppBuilder extends ProgressBuilder {
             this.rollbackAppVersion = environment.get(BuildParameters.rollbackAppVersion);
         }
 
-        // valid for version > 0.92
+        // valid for version > 0.91
         if(getGlobalSNParams() != null) {
             final String url = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.instanceForInstalledAppUrl);
             if(StringUtils.isBlank(this.getUrl()) && StringUtils.isNotBlank(url)) {

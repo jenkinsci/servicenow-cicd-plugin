@@ -110,7 +110,12 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>[24.1.1,)</version>
+            <!--
+            20.0 is the last version with the deprecated method sameThreadExecutor() in the class MoreExecutors.
+            It is required by JenkinsRule (used in integration tests) and  experiencing following exception in tests:
+            java.lang.NoSuchMethodError: com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor()
+            -->
+            <version>20.0</version>
             <scope>test</scope>
         </dependency>
         <!-- end of mockserver dependencies-->

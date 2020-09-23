@@ -27,6 +27,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Build step used for installation of an application.
+ * See: <a href="https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/cicd-api#cicd-POST-app_repo-install?navFilter=sn_cicd">
+ *     API documentation</a>.
+ */
 public class InstallAppBuilder extends ProgressBuilder {
 
     private static final Logger LOG = LogManager.getLogger(InstallAppBuilder.class);
@@ -143,7 +148,7 @@ public class InstallAppBuilder extends ProgressBuilder {
     protected void setupBuilderParameters(EnvVars environment) {
         super.setupBuilderParameters(environment);
 
-        // parameters used in version <= 0.92
+        // parameters used in version <= 0.91
         if(StringUtils.isBlank(this.appScope)) {
             this.appScope = environment.get(BuildParameters.appScope);
         }
@@ -156,7 +161,7 @@ public class InstallAppBuilder extends ProgressBuilder {
             this.appVersionToInstall = appVersion;
         }
 
-        // new ServiceNow Parameter for version > 0.92
+        // new ServiceNow Parameter for version > 0.91
         if(getGlobalSNParams() != null) {
             final String url = getGlobalSNParams().getString(PARAMS_NAMES.instanceForInstalledAppUrl);
             if(StringUtils.isBlank(this.getUrl()) && StringUtils.isNotBlank(url)) {

@@ -28,6 +28,11 @@ import java.io.PrintStream;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Base class of other build step classes checking a progress of the CI/CD function associated with a passed-in progress ID.
+ * See: <a href="https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/cicd-api#cicd-GET-progress?navFilter=sn_cicd">
+ *  *     API documentation</a>.
+ */
 public abstract class ProgressBuilder extends Builder implements SimpleBuildStep {
 
     private String url;
@@ -154,7 +159,7 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
         if(StringUtils.isNotBlank(globalSNParams)) {
             this.globalSNParams = JSONObject.fromObject(globalSNParams);
         }
-        // there are older parameters below valid for the plugin version <= 0.92 (they stay for compatibility purpose)
+        // there are older parameters below valid for the plugin version <= 0.91 (they stay for compatibility purpose)
         if(StringUtils.isBlank(this.url)) {
             this.url = environment.get(BuildParameters.instanceUrl);
         }

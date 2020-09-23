@@ -24,6 +24,11 @@ import org.kohsuke.stapler.QueryParameter;
 import javax.annotation.Nonnull;
 import java.net.UnknownHostException;
 
+/**
+ * Build step responsible for applying changes from a remote source control to a specified local application.
+ * See: <a href="https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/cicd-api#cicd-POST-sc-apply_changes?navFilter=sn_cicd">
+ *     API documentation</a>.
+ */
 public class ApplyChangesBuilder extends ProgressBuilder {
 
     private static final Logger LOG = LogManager.getLogger(ApplyChangesBuilder.class);
@@ -68,7 +73,7 @@ public class ApplyChangesBuilder extends ProgressBuilder {
     protected void setupBuilderParameters(EnvVars environment) {
         super.setupBuilderParameters(environment);
 
-        // parameters used in version <= 0.92
+        // parameters used in version <= 0.91
         if(StringUtils.isBlank(this.appScope)) {
             this.appScope = environment.get(BuildParameters.appScope);
         }
@@ -79,7 +84,7 @@ public class ApplyChangesBuilder extends ProgressBuilder {
             this.branchName = environment.get(BuildParameters.branchName);
         }
 
-        // new ServiceNow Parameter for version > 0.92
+        // new ServiceNow Parameter for version > 0.91
         if(getGlobalSNParams() != null) {
             final String url = getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.instanceForPublishedAppUrl);
             if(StringUtils.isBlank(this.getUrl()) && StringUtils.isNotBlank(url)) {
