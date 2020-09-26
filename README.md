@@ -37,6 +37,7 @@ This plugin integrates with Jenkins the [Now Platform from ServiceNow](https://w
 ## CI/CD integration with platform NOW
 The plugin delivers additional build steps that can be used in order to integrate CI / CD actions made on NOW platform using Jenkins as main Ci / CD tool.
 There are currently 7 build steps that can execute remotely action on the platform NOW. All of them starts from the phrase "SN" (like ServiceNow).
+
 ![Build Steps](doc/build-steps.png)
 
 ### Build steps
