@@ -11,13 +11,22 @@ pipeline {
   }
   stages {
     stage('Build') {
+      when {
+        not {
+          branch 'master'
+        }
+      }
       steps {
-        sh 'printenv'
         snApplyChanges(appSysId: "${APPSYSID}", branchName: "${BRANCH}", url: "${DEVENV}", credentialsId: "${CREDENTIALS}")
         snPublishApp(credentialsId: "${CREDENTIALS}", appSysId: "${APPSYSID}", obtainVersionAutomatically: true, url: "${DEVENV}")
       }
     }
     stage('Test') {
+      when {
+        not {
+          branch 'master'
+        }
+      }
       steps {
         snInstallApp(credentialsId: "${CREDENTIALS}", url: "${TESTENV}", appSysId: "${APPSYSID}")
         snRunTestSuite(credentialsId: "${CREDENTIALS}", url: "${TESTENV}", testSuiteSysId: "${TESTSUITEID}", withResults: true)
