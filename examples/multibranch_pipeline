@@ -4,9 +4,9 @@ pipeline {
     APPSYSID = '00f35c601b2b9410fe0165f8bc4bcb06'
     BRANCH = "${BRANCH_NAME}"
     CREDENTIALS = '18be2029-2e62-4070-8828-dbb3aa39f0f0'
-    DEVENV = 'https://instance.service-now.com/'
-    TESTENV = 'https://instance.service-now.com/'
-    PRODENV = 'https://instance.service-now.com/'
+    DEVENV = 'https://devinstance.service-now.com/'
+    TESTENV = 'https://testinstance.service-now.com/'
+    PRODENV = 'https://prodinstance.service-now.com/'
     TESTSUITEID = 'b1ae55eedb541410874fccd8139619fb'
   }
   stages {
