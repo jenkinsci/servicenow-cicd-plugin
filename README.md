@@ -68,7 +68,6 @@ The extension's Azure Pipelines Tasks are wrappers for the CI/CD APIs released a
 
 ![Build Steps](doc/build-steps.png)
 
-### Build steps
 #### SN: Apply changes
 Starts applying changes from a remote source control to a specified local application.
 The source control must be configured on the platform.
