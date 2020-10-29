@@ -12,6 +12,8 @@
 - [Usage](#usage)
 - [API Docs](#api-docs)
 - [List of Build Steps](#build-steps)
+- [Integration tests](#integration-tests)
+- [Troubleshouting](#troubleshouting)
 - [Support Model](#support-model)
 - [Governance Model](#governance-model)
 
@@ -49,7 +51,6 @@ The extension's Azure Pipelines Tasks are wrappers for the CI/CD APIs released a
 
 ## Build Steps
 
-- [CI/CD integration with platform NOW](#cicd-integration-with-platform-now)
   * [Build steps](#build-steps)
     + [SN: Apply changes](#sn-apply-changes)
     + [SN: Publish application](#sn-publish-application)
@@ -64,14 +65,6 @@ The extension's Azure Pipelines Tasks are wrappers for the CI/CD APIs released a
     + [Build steps](#build-steps-1)
     + [ServiceNow Parameters](#servicenow-parameters)
     + [Samples](#samples)
-- [Integration tests](#integration-tests)
-- [Troubleshouting](#troubleshouting)
-
-<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
-
-## CI/CD integration with platform NOW
-The plugin delivers additional build steps that can be used in order to integrate CI / CD actions made on NOW platform using Jenkins as main Ci / CD tool.
-There are currently 7 build steps that can execute remotely action on the platform NOW. All of them starts from the phrase "SN" (like ServiceNow).
 
 ![Build Steps](doc/build-steps.png)
 
