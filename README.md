@@ -1,5 +1,4 @@
 # ServiceNow CI/CD Extension for Azure Pipelines
-===================
 
 [![Documentation](https://img.shields.io/jenkins/plugin/v/servicenow-cicd.svg?label=Documentation)](https://plugins.jenkins.io/servicenow-cicd)
 [![GitHub release](https://img.shields.io/github/release/jenkinsci/servicenow-cicd-plugin.svg?label=Release)](https://github.com/jenkinsci/servicenow-cicd-plugin/releases/latest)
@@ -22,7 +21,7 @@
 
 This extension provides Tasks for setting up Continuous Integration (CI) or Continuous Delivery (CD) workflows using Azure Pipelines for developing applications on the Now Platform. **Click on the below screenshot to see a video for how you can use this extension to get started faster.**
 
-[![Get Started with Jenkins in 10 Minutes](https://github.com/github.com/jenkinsci/servicenow-cicd-plugin/raw/master/src/extension/youtube_link_Jenkins.png)](https://www.youtube.com/watch?v=MLa5dOu5zhY "Get Started with Jenkins in 10 Minutes")
+[![Get Started with Jenkins in 10 Minutes](examples/youtube_link_Jenkins.png)](https://www.youtube.com/watch?v=MLa5dOu5zhY "Get Started with Jenkins in 10 Minutes")
 
 The Tasks are API wrappers for the [CI/CD APIs](https://developer.servicenow.com/dev.do#!/reference/api/paris/rest/cicd-api) first released with Orlando, and do not cover other ServiceNow APIs. They will currently work with the Orlando and Paris releases. 
 
