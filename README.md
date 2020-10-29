@@ -1,4 +1,4 @@
-# ServiceNow CI/CD Extension for Azure Pipelines
+# ServiceNow CI/CD Plugin for Jenkins
 
 [![Documentation](https://img.shields.io/jenkins/plugin/v/servicenow-cicd.svg?label=Documentation)](https://plugins.jenkins.io/servicenow-cicd)
 [![GitHub release](https://img.shields.io/github/release/jenkinsci/servicenow-cicd-plugin.svg?label=Release)](https://github.com/jenkinsci/servicenow-cicd-plugin/releases/latest)
