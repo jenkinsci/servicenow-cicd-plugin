@@ -49,44 +49,6 @@ The extension's Azure Pipelines Tasks are wrappers for the CI/CD APIs released a
 
 ## Build Steps
 
-- ServiceNow CI/CD Install Application
-> Installs the specified application from the application repository onto the local instance
-
-- ServiceNow CI/CD Publish Application
-> Installs the specified application from the application repository onto the local instance
-
-- ServiceNow CI/CD Rollback Application
-> Initiate a rollback of a specified application to a specified version.
-
-- ServiceNow CI/CD Activate Plugin
-> Activate a desired plugin on your ServiceNow instance
-
-- ServiceNow CI/CD Rollback Plugin
-> Rollback a desired plugin on your ServiceNow instance
-
-- ServiceNow CI/CD Apply Changes
-> Apply changes from a remote source control to a specified local application
-
-- ServiceNow CI/CD Start Test Suite
-> Start a specified automated test suite.
-
-## Support Model
-
-ServiceNow built this integration with the intent to help customers get started faster in adopting CI/CD APIs for DevOps workflows, but __will not be providing formal support__. This integration is therefore considered "use at your own risk", and will rely on the open-source community to help drive fixes and feature enhancements via Issues. Occasionally, ServiceNow may choose to contribute to the open-source project to help address the highest priority Issues, and will do our best to keep the integrations updated with the latest API changes shipped with family releases. This is a good opportunity for our customers and community developers to step up and help drive iteration and improvement on these open-source integrations for everyone's benefit. 
-
-## Governance Model
-
-Initially, ServiceNow product management and engineering representatives will own governance of these integrations to ensure consistency with roadmap direction. In the longer term, we hope that contributors from customers and our community developers will help to guide prioritization and maintenance of these integrations. At that point, this governance model can be updated to reflect a broader pool of contributors and maintainers. 
-
-
-
-
-#### About the plugin
-This plugin provides build steps with easy parameter setup to help you get started faster with setting up a CI and CD pipeline for developing apps on the Now Platform.
-
-
-
----
 - [CI/CD integration with platform NOW](#cicd-integration-with-platform-now)
   * [Build steps](#build-steps)
     + [SN: Apply changes](#sn-apply-changes)
@@ -424,3 +386,11 @@ Known issues:
 happens also after the build step _Activate plugin_ (although it was completed with success). Trying to roll it back may lead to unclear
 status of the plugin on specified instance. Generally the use case will not happen, because usually a plugin is activated once
 and nobody would like to deactivate it just after activation.
+
+## Support Model
+
+ServiceNow built this integration with the intent to help customers get started faster in adopting CI/CD APIs for DevOps workflows, but __will not be providing formal support__. This integration is therefore considered "use at your own risk", and will rely on the open-source community to help drive fixes and feature enhancements via Issues. Occasionally, ServiceNow may choose to contribute to the open-source project to help address the highest priority Issues, and will do our best to keep the integrations updated with the latest API changes shipped with family releases. This is a good opportunity for our customers and community developers to step up and help drive iteration and improvement on these open-source integrations for everyone's benefit. 
+
+## Governance Model
+
+Initially, ServiceNow product management and engineering representatives will own governance of these integrations to ensure consistency with roadmap direction. In the longer term, we hope that contributors from customers and our community developers will help to guide prioritization and maintenance of these integrations. At that point, this governance model can be updated to reflect a broader pool of contributors and maintainers. 
