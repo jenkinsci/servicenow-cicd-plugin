@@ -12,8 +12,8 @@
 - [Usage](#usage)
 - [API Docs](#api-docs)
 - [List of Build Steps](#build-steps)
-- [Integration tests](#integration-tests)
-- [Troubleshouting](#troubleshouting)
+- [Integration Tests](#integration-tests)
+- [Troubleshooting](#troubleshooting)
 - [Support Model](#support-model)
 - [Governance Model](#governance-model)
 
@@ -322,8 +322,8 @@ pipeline {
 ```
 Link to the [example](examples/pipeline-script-3.groovy).
 
-## Integration tests
-Integration tests using the NOW's API are located in two classes: `ServiceNowAPIClientIntegrationTest` and `SNStepsIntegrationTest`.
+## Integration Tests
+Integration tests using the CI/CD APIs are located in two classes: `ServiceNowAPIClientIntegrationTest` and `SNStepsIntegrationTest`.
 All of the tests have the annotation `Ignore`, because they are not reliable for daily testing and require credentials.
 Following steps should be done to activate integration tests:
 * remove the annotation `Ignore` from all tests you want to run
@@ -372,7 +372,7 @@ Following steps should be done to activate integration tests:
       * create global credentials with user name and password on Jenkins instance
       * uncomment lines in _Jenkinsfile_ and replace the `credentialsId` value `482fa2bf-73b5-489a-8f9e-62004e01f10b` by the ID of newly created credentials
 
-## Troubleshouting
+## Troubleshooting
 Known issues:
 - Publishing an application does not make changes in linked repository as it is done directly from UI of NOW platform.
 - Following step _Roll back plugin_ should not be placed directly after _Activate plugin_, because finalizing the activation of a plugin
