@@ -19,17 +19,17 @@
 
 ## Intro
 
-This extension provides Tasks for setting up Continuous Integration (CI) or Continuous Delivery (CD) workflows using Azure Pipelines for developing applications on the Now Platform. **Click on the below screenshot to see a video for how you can use this extension to get started faster.**
+This extension provides Build Steps for setting up Continuous Integration (CI) or Continuous Delivery (CD) workflows using Jenkins for developing applications on the [Now Platform from ServiceNow](https://www.servicenow.com/now-platform.html). **Click on the below screenshot to see a video for how you can use this extension to get started faster.**
 
 [![Get Started with Jenkins in 10 Minutes](doc/youtube_link_Jenkins.png)](https://www.youtube.com/watch?v=MLa5dOu5zhY "Get Started with Jenkins in 10 Minutes")
 
-The Tasks are API wrappers for the [CI/CD APIs](https://developer.servicenow.com/dev.do#!/reference/api/paris/rest/cicd-api) first released with Orlando, and do not cover other ServiceNow APIs. They will currently work with the Orlando and Paris releases. 
+The Build Steps are API wrappers for the [CI/CD APIs](https://developer.servicenow.com/dev.do#!/reference/api/paris/rest/cicd-api) first released with Orlando, and do not cover other ServiceNow APIs. They will currently work with the Orlando and Paris releases. 
 
-Please reference our [open-source GitHub repo](https://github.com/ServiceNow/servicenow-cicd-azure-extension) for the implementation, as well as to submit any Issues or Pull Requests. For an example pipeline yml file, please copy from our [template](https://github.com/ServiceNow/servicenow-cicd-azure-extension/blob/master/examples/pipeline.yaml). 
+Please reference our [open-source GitHub repo](https://github.com/jenkinsci/servicenow-cicd-plugin) for the implementation, as well as to submit any Issues or Pull Requests. For bug reports, see [bugs](https://issues.jenkins-ci.org/issues/?filter=22440) or [all open issues](https://issues.jenkins-ci.org/issues/?filter=22441). For documentation, see [official plugin site](https://plugins.jenkins.io/servicenow-cicd). For an example pipeline yml file, please copy from one of the existing [templates](examples/). 
 
 ## Usage
 
-0. Create a new Azure DevOps project under an organization of your choice. For more information, please refer to [documentation](https://docs.microsoft.com/en-us/azure/devops/organizations/projects/create-project?view=azure-devops&tabs=preview-page). 
+0. Create a new Jenkins Multi project under an organization of your choice. For more information, please refer to [documentation](https://docs.microsoft.com/en-us/azure/devops/organizations/projects/create-project?view=azure-devops&tabs=preview-page). 
 1. [Link to Source Control](https://developer.servicenow.com/dev.do#!/learn/learning-plans/paris/new_to_servicenow/app_store_learnv2_devenvironment_paris_linking_an_application_to_source_control) for an application that has been created on your instance. You'll find the link in Azure Repos for your new project on Azure DevOps.  
 2. On your master branch, you should see a blue "Set up build" button in Azure Repos. Click on it to create your pipeline yml file. Copy paste the [template](https://github.com/ServiceNow/servicenow-cicd-azure-extension/blob/master/examples/pipeline.yaml), and change your environment variables to match your application's `sys_id`, ATF Test Suite `sys_id`, etc. On the first time, you can commit and save to the master branch without running the pipeline yet. 
 3. In Project Settings, look for the [`Service Connections` section](https://docs.microsoft.com/en-us/azure/devops/pipelines/library/service-endpoints?view=azure-devops&tabs=yaml) under "Pipelines". Create a new service connection of "ServiceNow CI/CD" type. You will need your instance URL, credentials for a service account, and note the name you're creating the Service Connection under. 
@@ -84,7 +84,7 @@ Initially, ServiceNow product management and engineering representatives will ow
 #### About the plugin
 This plugin provides build steps with easy parameter setup to help you get started faster with setting up a CI and CD pipeline for developing apps on the Now Platform.
 
-This plugin integrates with Jenkins the [Now Platform from ServiceNow](https://www.servicenow.com/now-platform.html). For bug reports, see [bugs](https://issues.jenkins-ci.org/issues/?filter=22440) or [all open issues](https://issues.jenkins-ci.org/issues/?filter=22441). For documentation, see [official plugin site](https://plugins.jenkins.io/servicenow-cicd).
+
 
 ---
 - [CI/CD integration with platform NOW](#cicd-integration-with-platform-now)
