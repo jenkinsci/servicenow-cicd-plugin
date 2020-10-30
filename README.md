@@ -31,7 +31,12 @@ Please reference our [open-source GitHub repo](https://github.com/jenkinsci/serv
 
 ## Usage
 
-0. Prerequisites for setup: you will need a GitHub repo, a Jenkins box, and a new Jenkins multibranch pipelines project. To set up your own Jenkins box, you can follow the [Docker image setup instructions at the Jenkins site](https://www.jenkins.io/doc/book/installing/docker/), running on compute such as [AWS EC2](https://aws.amazon.com/ec2/). To create a new Jenkins project, just click on New Item on the main page 
+### Prerequisites
+
+1. you will need a GitHub repo, a Jenkins box, and a new Jenkins multibranch pipelines project. To set up your own Jenkins box, you can follow the [Docker image setup instructions at the Jenkins site](https://www.jenkins.io/doc/book/installing/docker/), running on compute such as [AWS EC2](https://aws.amazon.com/ec2/). To create a new Jenkins project, just click on New Item on the main page 
+
+### Quick Setup Guide
+
 1. [Link to Source Control](https://developer.servicenow.com/dev.do#!/learn/learning-plans/paris/new_to_servicenow/app_store_learnv2_devenvironment_paris_linking_an_application_to_source_control) for an application that has been created on your instance. You'll find the link in Azure Repos for your new project on Azure DevOps.  
 2. On your master branch, you should see a blue "Set up build" button in Azure Repos. Click on it to create your pipeline yml file. Copy paste the [template](https://github.com/ServiceNow/servicenow-cicd-azure-extension/blob/master/examples/pipeline.yaml), and change your environment variables to match your application's `sys_id`, ATF Test Suite `sys_id`, etc. On the first time, you can commit and save to the master branch without running the pipeline yet. 
 3. In Project Settings, look for the [`Service Connections` section](https://docs.microsoft.com/en-us/azure/devops/pipelines/library/service-endpoints?view=azure-devops&tabs=yaml) under "Pipelines". Create a new service connection of "ServiceNow CI/CD" type. You will need your instance URL, credentials for a service account, and note the name you're creating the Service Connection under. 
@@ -39,7 +44,7 @@ Please reference our [open-source GitHub repo](https://github.com/jenkinsci/serv
 5. Back on the pipeline, make sure to change the `connectedServiceName` parameters for the individual Tasks to match your new Service Connections. 
 6. You should now be able to create a new feature branch off master branch on your instance, develop features/fixes, commit to Source Control, create a PR, and your CI build will run automatically. Once our CI build passes and your PR is completed and feature branch merged to master, your CD build to deploy the application to production should trigger as well. 
 
-**Other Notes**
+### Other Notes
 
 Tasks are all named starting with the **ServiceNow CI/CD** substring for easier organization and search filtering, and can be added via both the classic editor as well as the YAML editor in Azure DevOps. 
 
