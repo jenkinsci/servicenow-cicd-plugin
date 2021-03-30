@@ -234,4 +234,53 @@ public class ServiceNowApiClientTest {
         assertThat(progressResult.getPercentComplete()).isEqualTo(100);
         assertThat(serviceNowAPIClient.getLastActionProgressUrl()).endsWith(PROGRESS_ID2);
     }
+
+    @Test
+    public void installApp() throws IOException, URISyntaxException {
+        // given
+        String systemId = "testSystemId";
+        Boolean baseAppAutoUpgrade = Boolean.TRUE;
+        String baseAppVersion = "1.0.0";
+        mockServer.when(
+                request()
+                        .withMethod("POST")
+                        .withPath("/api/sn_cicd/app_repo/install")
+                        .withQueryStringParameter(RequestParameters.SYSTEM_ID, systemId)
+                        .withQueryStringParameter(RequestParameters.APP_AUTO_UPGRADE_BASE, baseAppAutoUpgrade.toString())
+                        .withQueryStringParameter(RequestParameters.APP_BASE_VERSION, baseAppVersion)
+        )
+                .respond(
+                        response()
+                                .withStatusCode(200)
+                                .withBody("{\n" +
+                                        "    \"result\": {\n" +
+                                        "        \"links\": {\n" +
+                                        "            \"progress\": {\n" +
+                                        "                \"id\": \"" + PROGRESS_ID + "\",\n" +
+                                        "                \"url\": \"http://" + HOST_MOCKED + ":" + PORT + "/api/sn_cicd/progress/" + PROGRESS_ID + "\"\n" +
+                                        "            }\n" +
+                                        "        },\n" +
+                                        "        \"status\": \"0\",\n" +
+                                        "        \"status_label\": \"Pending\",\n" +
+                                        "        \"status_message\": \"\",\n" +
+                                        "        \"status_detail\": \"\",\n" +
+                                        "        \"error\": \"\",\n" +
+                                        "        \"percent_complete\": 0\n" +
+                                        "    }\n" +
+                                        "}")
+                );
+
+        // when
+        Result result = serviceNowAPIClient.installApp(null, systemId, null, baseAppVersion, baseAppAutoUpgrade);
+
+        // then
+        mockServer.verify(
+                request("/api/sn_cicd/app_repo/install"), VerificationTimes.exactly(1)
+        );
+        assertThat(result).isNotNull();
+        assertThat(result.getStatus()).isEqualTo("0");
+        assertThat(result.getLinks().getProgress().getId()).isEqualTo(PROGRESS_ID);
+        assertThat(result.getLinks().getProgress().getUrl()).contains(HOST_MOCKED, Integer.toString(PORT), PROGRESS_ID);
+        assertThat(serviceNowAPIClient.getLastActionProgressUrl()).endsWith(PROGRESS_ID);
+    }
 }

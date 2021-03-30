@@ -66,8 +66,11 @@ public class InstallAppBuilderTest {
         installAppBuilder.setApiVersion(InstallAppBuilderTest.TestData.apiVersion);
         installAppBuilder.setAppScope(TestData.scope);
         installAppBuilder.setAppSysId((TestData.sysId));
+        installAppBuilder.setBaseAppAutoUpgrade(TestData.updateBaseVersion);
+        installAppBuilder.setBaseAppVersion(TestData.baseAppVersion);
 
-        given(this.restClientMock.installApp(eq(TestData.scope), eq(TestData.sysId), eq(TestData.applicationVersion))).willReturn(getPendingResult());
+        given(this.restClientMock.installApp(eq(TestData.scope), eq(TestData.sysId), eq(TestData.applicationVersion),
+                eq(TestData.baseAppVersion), eq(TestData.updateBaseVersion))).willReturn(getPendingResult());
         given(this.restClientMock.checkProgress()).willReturn(getSuccessfulResult(100,null));
 
         // when
@@ -79,10 +82,15 @@ public class InstallAppBuilderTest {
         ArgumentCaptor<String> scopeCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> sysIdCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> appVersionCaptor = ArgumentCaptor.forClass(String.class);
-        verify(restClientMock, times(1)).installApp(scopeCaptor.capture(), sysIdCaptor.capture(), appVersionCaptor.capture());
+        ArgumentCaptor<String> baseAppVersionCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Boolean> updateBaseAppVersionCaptor = ArgumentCaptor.forClass(Boolean.class);
+        verify(restClientMock, times(1)).installApp(scopeCaptor.capture(), sysIdCaptor.capture(),
+                appVersionCaptor.capture(), baseAppVersionCaptor.capture(), updateBaseAppVersionCaptor.capture());
         assertThat(scopeCaptor.getValue(), is(TestData.scope));
         assertThat(sysIdCaptor.getValue(), is(TestData.sysId));
         assertThat(appVersionCaptor.getValue(), is(TestData.applicationVersion));
+        assertThat(baseAppVersionCaptor.getValue(), is(TestData.baseAppVersion));
+        assertThat(updateBaseAppVersionCaptor.getValue(), is(true));
 
         verify(restClientMock, times(1)).checkProgress();
     }
@@ -137,6 +145,8 @@ public class InstallAppBuilderTest {
         String sysId = "123456789";
         String scope = "testScope";
         String applicationVersion = "1.0.1";
+        String baseAppVersion = "2.0.0";
+        Boolean updateBaseVersion = true;
     }
 
 }
