@@ -18,4 +18,8 @@ public interface RequestParameters {
 
     String APP_VERSION = "version";
     String DEV_NOTES = "dev_notes";
+
+    // instance scan parameters
+    String TARGET_TABLE = "target_table";
+    String TARGET_SYS_ID = "target_sys_id";
 }
