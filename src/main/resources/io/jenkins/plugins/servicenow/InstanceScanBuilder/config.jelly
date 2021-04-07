@@ -1,0 +1,36 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+    <f:entry title="${%ScanType}" field="scanType">
+        <f:select/>
+        <!--select name="scanType">
+            <j:forEach var="scanItem" items="${descriptor.scanTypes}">
+                <f:option value="${scanItem}" selected="${scanType == scanItem}">${scanItem}${descriptor.translatedScanType(scanItem)}</f:option>
+            </j:forEach>
+        </select-->
+    </f:entry>
+    <f:entry title="${%TargetTable}" field="targetTable">
+        <f:textbox/>
+    </f:entry>
+    <f:entry title="${%TargetRecordSysId}" field="targetRecordSysId">
+        <f:textbox/>
+    </f:entry>
+    <f:entry title="${%ComboSysId}" field="comboSysId">
+        <f:textbox/>
+    </f:entry>
+    <f:block>
+        <f:entry title="${%SuiteSysId}" field="suiteSysId">
+            <f:textbox/>
+        </f:entry>
+        <f:entry title="${%RequestBody}" field="requestBody">
+            <f:textarea/>
+        </f:entry>
+    </f:block>
+    <f:advanced>
+        <f:entry title="${%Url}" field="url">
+            <f:textbox/>
+        </f:entry>
+        <f:entry title="${%Credentials}" field="credentialsId">
+            <f:textbox/>
+        </f:entry>
+    </f:advanced>
+</j:jelly>
