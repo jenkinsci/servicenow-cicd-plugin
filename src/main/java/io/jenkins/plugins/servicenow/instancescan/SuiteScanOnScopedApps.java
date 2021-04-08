@@ -9,7 +9,7 @@ import java.net.URISyntaxException;
 public class SuiteScanOnScopedApps implements ScanAction {
     @Override
     public boolean isApplicable(ScanType scanType) {
-        return ScanType.scanWithSuiteOnScopedApp.equals(scanType);
+        return ScanType.scanWithSuiteOnScopedApps.equals(scanType);
     }
 
     /**

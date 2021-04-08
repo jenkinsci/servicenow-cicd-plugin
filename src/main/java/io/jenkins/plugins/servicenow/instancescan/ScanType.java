@@ -4,6 +4,6 @@ public enum ScanType {
     fullScan,
     pointScan,
     scanWithCombo,
-    scanWithSuiteOnScopedApp,
+    scanWithSuiteOnScopedApps,
     scanWithSuiteOnUpdateSets
 }

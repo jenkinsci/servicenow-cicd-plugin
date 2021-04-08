@@ -32,8 +32,9 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.MissingResourceException;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Build step responsible for instance scan as well as getting progress and results of runs.
@@ -49,6 +50,7 @@ public class InstanceScanBuilder extends ProgressBuilder {
     private String comboSysId;
     private String suiteSysId;
     private String requestBody;
+
     private Set<ScanAction> scanExecutions;
 
     @DataBoundConstructor
@@ -204,7 +206,7 @@ public class InstanceScanBuilder extends ProgressBuilder {
     private void checkInputRequirements() {
         String errorMessage = StringUtils.EMPTY;
         if(CollectionUtils.isEmpty(scanExecutions)) {
-            errorMessage += "No scan executors were found in the system!";
+            errorMessage += System.lineSeparator() + "No scan executors were found in the system!";
         }
 
         try {
@@ -215,13 +217,18 @@ public class InstanceScanBuilder extends ProgressBuilder {
         }
 
         if(StringUtils.isNotBlank(errorMessage)) {
-            errorMessage = "Check requirements before scanning: " + System.lineSeparator() +
+            errorMessage = "Check requirements before scanning: " +
                     errorMessage;
             throw new IllegalStateException(errorMessage);
         }
     }
 
     private Result executeScan(ScanAction scanAction) throws IOException, URISyntaxException {
+        String[] params = createScanParameters();
+        return scanAction.execute(getRestClient(), params);
+    }
+
+    private String[] createScanParameters() {
         String[] params;
         switch(ScanType.valueOf(this.scanType)) {
             case pointScan:
@@ -235,7 +242,7 @@ public class InstanceScanBuilder extends ProgressBuilder {
                         .add(comboSysId)
                         .build();
                 break;
-            case scanWithSuiteOnScopedApp:
+            case scanWithSuiteOnScopedApps:
             case scanWithSuiteOnUpdateSets:
                 ScanParameters sc = ScanParameters.params()
                         .add(suiteSysId);
@@ -247,7 +254,7 @@ public class InstanceScanBuilder extends ProgressBuilder {
             default:
                 params = ScanParameters.params().build();
         }
-        return scanAction.execute(getRestClient(), params);
+        return params;
     }
 
     @Symbol("snInstanceScan")
@@ -261,16 +268,6 @@ public class InstanceScanBuilder extends ProgressBuilder {
                 }
             }
             return FormValidation.ok();
-        }
-
-        public String getTranslatedScanType(String scanType) {
-            return scanType;
-        }
-
-        public List<String> getScanTypes() {
-            return Arrays.stream(ScanType.values())
-                    .map(type -> type.toString())
-                    .collect(Collectors.toList());
         }
 
         public ListBoxModel doFillScanTypeItems() {

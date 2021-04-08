@@ -29,7 +29,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
-public class InstallAppBuilderTest {
+public class InstallAppBuilderTest extends BaseAPICallResultTest {
 
     private InstallAppBuilder installAppBuilder;
 
@@ -103,31 +103,6 @@ public class InstallAppBuilderTest {
 
         // then
         // expect an exception
-    }
-
-    private Result getPendingResult() {
-        final Result result = new Result();
-        result.setStatus(ActionStatus.PENDING.getStatus());
-        return result;
-    }
-
-    private Result getSuccessfulResult(int percentComplete, String statusMessage) {
-        final Result result = new Result();
-        result.setStatus(ActionStatus.SUCCESSFUL.getStatus());
-        result.setPercentComplete(percentComplete);
-        if(StringUtils.isNotBlank(statusMessage)) {
-            result.setStatusMessage(statusMessage);
-        }
-        return result;
-    }
-
-    private Result getFailedResult(String errorMessage) {
-        final Result result = new Result();
-        result.setStatus(ActionStatus.FAILED.getStatus());
-        if(StringUtils.isNotBlank(errorMessage)) {
-            result.setStatusMessage(errorMessage);
-        }
-        return result;
     }
 
     private interface TestData {
