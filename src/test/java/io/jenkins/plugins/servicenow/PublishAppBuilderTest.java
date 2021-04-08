@@ -6,10 +6,7 @@ import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.ParametersAction;
 import hudson.model.TaskListener;
-import io.jenkins.plugins.servicenow.api.ActionStatus;
 import io.jenkins.plugins.servicenow.api.ServiceNowAPIClient;
-import io.jenkins.plugins.servicenow.api.model.Result;
-import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,7 +25,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
-public class PublishAppBuilderTest {
+public class PublishAppBuilderTest extends BaseAPICallResultTest {
 
     private PublishAppBuilder publishAppBuilder;
 
@@ -131,31 +128,6 @@ public class PublishAppBuilderTest {
         assertThat(publishAppBuilder.getRestClient(), is(restClientMock));
         verify(restClientMock, times(1)).publishApp(eq(TestData.scope), eq(TestData.sysId), eq(TestData.applicationVersion), eq(TestData.devNotes));
         verify(restClientMock, times(1)).checkProgress();
-    }
-
-    private Result getPendingResult() {
-        final Result result = new Result();
-        result.setStatus(ActionStatus.PENDING.getStatus());
-        return result;
-    }
-
-    private Result getSuccessfulResult(int percentComplete, String statusMessage) {
-        final Result result = new Result();
-        result.setStatus(ActionStatus.SUCCESSFUL.getStatus());
-        result.setPercentComplete(percentComplete);
-        if(StringUtils.isNotBlank(statusMessage)) {
-            result.setStatusMessage(statusMessage);
-        }
-        return result;
-    }
-
-    private Result getFailedResult(String errorMessage) {
-        final Result result = new Result();
-        result.setStatus(ActionStatus.FAILED.getStatus());
-        if(StringUtils.isNotBlank(errorMessage)) {
-            result.setStatusMessage(errorMessage);
-        }
-        return result;
     }
 
     private interface TestData {
