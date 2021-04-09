@@ -104,7 +104,7 @@ public class InstallAppBuilderTest extends BaseAPICallResultTest {
         installAppBuilder.setApiVersion(InstallAppBuilderTest.TestData.apiVersion);
         installAppBuilder.setAppScope(TestData.scope);
         installAppBuilder.setAppSysId((TestData.sysId));
-        given(this.restClientMock.installApp(eq(TestData.scope), eq(TestData.sysId), eq(TestData.applicationVersion))).willReturn(getFailedResult("error"));
+        //given(this.restClientMock.installApp(eq(TestData.scope), eq(TestData.sysId), eq(TestData.applicationVersion))).willReturn(getFailedResult("error"));
 
         // when
         installAppBuilder.perform(runMock, null, launcherMock, taskListenerMock);
