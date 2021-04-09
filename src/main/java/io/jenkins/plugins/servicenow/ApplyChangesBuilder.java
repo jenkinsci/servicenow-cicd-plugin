@@ -147,7 +147,7 @@ public class ApplyChangesBuilder extends ProgressBuilder {
             } else { // serve result with the status FAILED
                 LOG.error("Apply changes request replied with failure: " + serviceNowResult);
                 String errorDetail = this.buildErrorDetailFromFailedResponse(serviceNowResult);
-                taskListener.getLogger().println("Error occurred when publishing the application was requested: " + errorDetail);
+                taskListener.getLogger().println("Error occurred when 'apply changes' action was requested: " + errorDetail);
             }
         } else {
             taskListener.getLogger().println("Apply changes action failed. Check logs!");

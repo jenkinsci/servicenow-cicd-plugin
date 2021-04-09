@@ -2,9 +2,10 @@ package io.jenkins.plugins.servicenow.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hudson.util.Secret;
-import io.jenkins.plugins.servicenow.api.model.*;
 import io.jenkins.plugins.servicenow.api.model.Error;
-import org.apache.commons.collections.CollectionUtils;
+import io.jenkins.plugins.servicenow.api.model.Response;
+import io.jenkins.plugins.servicenow.api.model.Result;
+import io.jenkins.plugins.servicenow.api.model.TableResponse;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -234,6 +235,60 @@ public class ServiceNowAPIClient {
         return StringUtils.EMPTY;
     }
 
+    public Result executeFullScan() throws IOException, URISyntaxException {
+        final String endpoint = "instance_scan/full_scan";
+        LOG.debug("ServiceNow API call > execute full scan");
+
+        return sendRequest(endpoint, null, null);
+    }
+
+    /**
+     * Execute Point Scan (with progress flow).
+     * @param targetTable Target table to be scanned.
+     * @param targetSysId Target record to be scanned.
+     * @return Results with a link to follow the progress of the scan.
+     */
+    public Result executePointScan(final String targetTable, final String targetSysId) throws IOException, URISyntaxException {
+        final String endpoint = "instance_scan/point_scan";
+        LOG.debug("ServiceNow API call > execute point scan");
+
+        List<NameValuePair> params = new ArrayList<>();
+        addParameter(params, RequestParameters.TARGET_TABLE, targetTable);
+        addParameter(params, RequestParameters.TARGET_SYS_ID, targetSysId);
+
+        return sendRequest(endpoint, params, null);
+    }
+
+    public Result executeScanWithCombo(final String comboSysId) throws IOException, URISyntaxException {
+        if(StringUtils.isBlank(comboSysId)) {
+            throw new IllegalArgumentException("Scan with combo cannot be executed without the parameter combo_sys_id!");
+        }
+        final String endpoint = "instance_scan/suite_scan/combo/" + comboSysId;
+        LOG.debug("ServiceNow API call > execute scan with combo");
+
+        return sendRequest(endpoint, null, null);
+    }
+
+    public Result executeScanWithSuiteOnScopedApps(final String suiteSysId, final String requestBody) throws IOException, URISyntaxException {
+        if(StringUtils.isBlank(suiteSysId)) {
+            throw new IllegalArgumentException("Scan with suite on scoped apps cannot be executed without the parameter suiteSysId!");
+        }
+        final String endpoint = "instance_scan/suite_scan/" + suiteSysId + "/scoped_apps";
+        LOG.debug("ServiceNow API call > execute scan with suite on scoped apps");
+
+        return sendRequest(endpoint, null, requestBody);
+    }
+
+    public Result executeScanWithSuiteOnUpdateSet(final String suiteSysId, String requestBody) throws IOException, URISyntaxException {
+        if(StringUtils.isBlank(suiteSysId)) {
+            throw new IllegalArgumentException("Scan with suite on scoped apps cannot be executed without the parameter suiteSysId!");
+        }
+        final String endpoint = "instance_scan/suite_scan/" + suiteSysId + "/update_sets";
+        LOG.debug("ServiceNow API call > execute scan with suite on update set");
+
+        return sendRequest(endpoint, null, requestBody);
+    }
+
     /**
      * Send POST request using following parameters.
      *
@@ -242,7 +297,7 @@ public class ServiceNowAPIClient {
      * @param jsonBody Body of the request (as JSON object)
      * @return Result of the response or null if there was thrown an exception.
      */
-    private Result sendRequest(String endpoint, List<NameValuePair> params, JsonData jsonBody) throws IOException, URISyntaxException {
+    private Result sendRequest(String endpoint, List<NameValuePair> params, String jsonBody) throws IOException, URISyntaxException {
         Response response = this.post(endpoint, params, jsonBody);
 
         return getResult(endpoint, response);
@@ -326,7 +381,7 @@ public class ServiceNowAPIClient {
         return null;
     }
 
-    private Response post(final String endpointPath, final List<NameValuePair> parameters, final JsonData jsonBody) throws URISyntaxException, IOException {
+    private Response post(final String endpointPath, final List<NameValuePair> parameters, final String jsonBody) throws URISyntaxException, IOException {
         this.lastActionProgressUrl = StringUtils.EMPTY;
         try(CloseableHttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(getCredentials()).build()) {
 
@@ -361,7 +416,7 @@ public class ServiceNowAPIClient {
         return result;
     }
 
-    private HttpResponse sendRequest(final CloseableHttpClient client, final HttpRequestBase request, final String endpointPath, final List<NameValuePair> parameters, final JsonData jsonBody) throws URISyntaxException, IOException {
+    private HttpResponse sendRequest(final CloseableHttpClient client, final HttpRequestBase request, final String endpointPath, final List<NameValuePair> parameters, final String jsonBody) throws URISyntaxException, IOException {
         URIBuilder uriBuilder = new URIBuilder(isURL(endpointPath) ? endpointPath : this.getCICDApiUrl() + endpointPath);
         if(parameters != null) {
             uriBuilder.setParameters(parameters);
@@ -373,7 +428,7 @@ public class ServiceNowAPIClient {
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.JSON);
 
         if(jsonBody != null && request instanceof HttpPost) {
-            final HttpEntity requestBody = new StringEntity(new ObjectMapper().writeValueAsString(jsonBody));
+            final HttpEntity requestBody = new StringEntity(jsonBody);
             ((HttpPost) request).setEntity(requestBody);
         }
 
