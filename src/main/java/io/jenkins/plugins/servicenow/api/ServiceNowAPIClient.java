@@ -153,7 +153,17 @@ public class ServiceNowAPIClient {
         return sendRequest(endpoint, params, null);
     }
 
-    public Result installApp(final String applicationScope, final String applicationSysId, final String applicationVersion) throws IOException, URISyntaxException {
+    public Result installApp(final String applicationScope,
+            final String applicationSysId,
+            final String applicationVersion) throws IOException, URISyntaxException {
+        return this.installApp(applicationScope, applicationSysId, applicationVersion, null, null);
+    }
+
+    public Result installApp(final String applicationScope,
+            final String applicationSysId,
+            final String applicationVersion,
+            final String baseAppVersion,
+            final Boolean autoUpgradeBaseApp) throws IOException, URISyntaxException {
         final String endpoint = "app_repo/install";
         LOG.debug("ServiceNow API call > installApp");
 
@@ -161,6 +171,12 @@ public class ServiceNowAPIClient {
         addParameter(params, RequestParameters.SCOPE, applicationScope);
         addParameter(params, RequestParameters.SYSTEM_ID, applicationSysId);
         addParameter(params, RequestParameters.APP_VERSION, applicationVersion);
+        if(StringUtils.isNotBlank(baseAppVersion)) {
+            addParameter(params, RequestParameters.APP_BASE_VERSION, baseAppVersion);
+        }
+        if(autoUpgradeBaseApp != null) {
+            addParameter(params, RequestParameters.APP_AUTO_UPGRADE_BASE, autoUpgradeBaseApp.toString());
+        }
 
         return sendRequest(endpoint, params, null);
     }

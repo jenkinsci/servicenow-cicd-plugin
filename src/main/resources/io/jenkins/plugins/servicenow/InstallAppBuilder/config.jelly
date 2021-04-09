@@ -22,5 +22,11 @@
         <f:entry title="${%AppSysId}" field="appSysId">
             <f:textbox/>
         </f:entry>
+        <f:entry title="${%BaseAppAutoUpgrade}" field="baseAppAutoUpgrade">
+            <f:checkbox/>
+        </f:entry>
+        <f:entry title="${%BaseAppVersion}" field="baseAppVersion">
+            <f:textbox/>
+        </f:entry>
     </f:advanced>
 </j:jelly>
