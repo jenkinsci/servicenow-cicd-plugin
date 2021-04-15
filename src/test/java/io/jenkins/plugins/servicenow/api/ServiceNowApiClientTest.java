@@ -512,4 +512,114 @@ public class ServiceNowApiClientTest {
         assertThat(result.getLinks().getProgress().getUrl()).contains(HOST_MOCKED, Integer.toString(PORT), PROGRESS_ID);
         assertThat(serviceNowAPIClient.getLastActionProgressUrl()).endsWith(PROGRESS_ID);
     }
+
+    @Test
+    public void testBatchInstall() throws IOException, URISyntaxException {
+        // given
+        String name = "Test batch install";
+        String packages = "[{'id': 'qwerty', 'type': 'application', 'requested_version': '1.0.0']";
+        String notes = "Test notes";
+        String requestBody = "{" +
+                "\"name\": \"" + name + "\", " +
+                "\"packages\": " + packages + ", " +
+                "\"notes\": \"" + notes + "\"}";
+        String rollbackId = "abcd1234";
+        String resultId = "4321dcba";
+        mockServer.when(
+                request()
+                        .withMethod("POST")
+                        .withPath("/api/sn_cicd/app/batch/install")
+                        .withBody(requestBody)
+        )
+                .respond(
+                        response()
+                                .withStatusCode(200)
+                                .withBody("{\n" +
+                                        "    \"result\": {\n" +
+                                        "        \"links\": {\n" +
+                                        "            \"progress\": {\n" +
+                                        "                \"id\": \"" + PROGRESS_ID + "\",\n" +
+                                        "                \"url\": \"http://" + HOST_MOCKED + ":" + PORT + "/api/sn_cicd/progress/" + PROGRESS_ID + "\"\n" +
+                                        "            },\n" +
+                                        "            \"results\": {\n" +
+                                        "                \"id\": \"" + resultId + "\",\n" +
+                                        "                \"url\": \"https://" + HOST_MOCKED + ":" + PORT + "/api/sn_cicd/app/batch/results/" + resultId + "\"\n" +
+                                        "            },\n" +
+                                        "            \"rollback\": {\n" +
+                                        "                \"id\": \"" + rollbackId + "\",\n" +
+                                        "                \"url\": \"https://" + HOST_MOCKED + ":" + PORT + "/api/sn_cicd/app/batch/rollback/" + rollbackId + "\"\n" +
+                                        "            }" +
+                                        "        },\n" +
+                                        "        \"status\": \"0\",\n" +
+                                        "        \"status_label\": \"Pending\",\n" +
+                                        "        \"status_message\": \"\",\n" +
+                                        "        \"status_detail\": \"\",\n" +
+                                        "        \"error\": \"\",\n" +
+                                        "        \"percent_complete\": 0\n" +
+                                        "    }\n" +
+                                        "}")
+                );
+
+        // when
+        Result result = serviceNowAPIClient.batchInstall(name, packages, notes);
+
+        // then
+        mockServer.verify(
+                request("/api/sn_cicd/app/batch/install"), VerificationTimes.exactly(1)
+        );
+        assertThat(result).isNotNull();
+        assertThat(result.getStatus()).isEqualTo("0");
+        assertThat(result.getLinks().getProgress().getId()).isEqualTo(PROGRESS_ID);
+        assertThat(result.getLinks().getProgress().getUrl()).contains(HOST_MOCKED, Integer.toString(PORT), PROGRESS_ID);
+        assertThat(result.getLinks().getResults().getId()).isEqualTo(resultId);
+        assertThat(result.getLinks().getResults().getUrl()).contains(HOST_MOCKED, Integer.toString(PORT), resultId);
+        assertThat(result.getLinks().getRollback().getId()).isEqualTo(rollbackId);
+        assertThat(result.getLinks().getRollback().getUrl()).contains(HOST_MOCKED, Integer.toString(PORT), PROGRESS_ID);
+        assertThat(serviceNowAPIClient.getLastActionProgressUrl()).endsWith(PROGRESS_ID);
+    }
+
+    @Test
+    public void testBatchRollback() throws IOException, URISyntaxException {
+        // given
+        String rollbackId = "qwerty1234";
+        mockServer.when(
+                request()
+                        .withMethod("POST")
+                        .withPath("/api/sn_cicd/app/batch/rollback/{rollbackId}")
+                        .withPathParameter("rollbackId", rollbackId)
+        )
+                .respond(
+                        response()
+                                .withStatusCode(200)
+                                .withBody("{\n" +
+                                        "    \"result\": {\n" +
+                                        "        \"links\": {\n" +
+                                        "            \"progress\": {\n" +
+                                        "                \"id\": \"" + PROGRESS_ID + "\",\n" +
+                                        "                \"url\": \"http://" + HOST_MOCKED + ":" + PORT + "/api/sn_cicd/progress/" + PROGRESS_ID + "\"\n" +
+                                        "            }\n" +
+                                        "        },\n" +
+                                        "        \"status\": \"0\",\n" +
+                                        "        \"status_label\": \"Pending\",\n" +
+                                        "        \"status_message\": \"\",\n" +
+                                        "        \"status_detail\": \"\",\n" +
+                                        "        \"error\": \"\",\n" +
+                                        "        \"percent_complete\": 0\n" +
+                                        "    }\n" +
+                                        "}")
+                );
+
+        // when
+        Result result = serviceNowAPIClient.batchRollback(rollbackId);
+
+        // then
+        mockServer.verify(
+                request("/api/sn_cicd/app/batch/rollback/" + rollbackId), VerificationTimes.exactly(1)
+        );
+        assertThat(result).isNotNull();
+        assertThat(result.getStatus()).isEqualTo("0");
+        assertThat(result.getLinks().getProgress().getId()).isEqualTo(PROGRESS_ID);
+        assertThat(result.getLinks().getProgress().getUrl()).contains(HOST_MOCKED, Integer.toString(PORT), PROGRESS_ID);
+        assertThat(serviceNowAPIClient.getLastActionProgressUrl()).endsWith(PROGRESS_ID);
+    }
 }

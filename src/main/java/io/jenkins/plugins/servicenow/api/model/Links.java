@@ -12,6 +12,9 @@ public class Links extends JsonResponseObject {
     @JsonProperty
     private LinkObject source;
 
+    @JsonProperty
+    private LinkObject rollback;
+
     public LinkObject getProgress() {
         return progress;
     }
@@ -34,5 +37,13 @@ public class Links extends JsonResponseObject {
 
     public void setSource(LinkObject source) {
         this.source = source;
+    }
+
+    public LinkObject getRollback() {
+        return rollback;
+    }
+
+    public void setRollback(LinkObject rollback) {
+        this.rollback = rollback;
     }
 }

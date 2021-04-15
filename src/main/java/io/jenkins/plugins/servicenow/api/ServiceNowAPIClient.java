@@ -29,6 +29,7 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -287,6 +288,31 @@ public class ServiceNowAPIClient {
         LOG.debug("ServiceNow API call > execute scan with suite on update set");
 
         return sendRequest(endpoint, null, requestBody);
+    }
+
+    public Result batchInstall(final String batchName, final String packages, final String notes) throws IOException, URISyntaxException {
+        final String endpoint = "app/batch/install";
+        LOG.debug("ServiceNow API call > batch install");
+
+        String requestBody = "{" +
+                MessageFormat.format(
+                        "\"name\": \"{0}\", \"packages\": {1}, \"notes\": \"{2}\"",
+                        batchName, packages, notes) +
+                "}";
+
+        LOG.debug("Batch install payload: " + requestBody);
+
+        return sendRequest(endpoint, null, requestBody);
+    }
+
+    public Result batchRollback(final String rollbackId) throws IOException, URISyntaxException {
+        if(StringUtils.isBlank(rollbackId)) {
+            throw new IllegalArgumentException("Rollback id must not be empty or blank!");
+        }
+        final String endpoint = "app/batch/rollback/" + rollbackId;
+        LOG.debug("ServiceNow API call > batch rollback [id=" + rollbackId + "]");
+
+        return sendRequest(endpoint, null, null);
     }
 
     /**

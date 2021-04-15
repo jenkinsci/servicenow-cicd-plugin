@@ -71,6 +71,7 @@ public class SNStepsIntegrationTest {
                 APP_SCOPE,
                 "",
                 "",
+                "",
                 null);
 
         job.addProperty(new ParametersDefinitionProperty(snParams));
@@ -97,6 +98,7 @@ public class SNStepsIntegrationTest {
                 credentialsId,
                 HOST_INSTALLATION,
                 SYSTEM_ID,
+                "",
                 "",
                 "",
                 "",
@@ -132,6 +134,7 @@ public class SNStepsIntegrationTest {
                 credentialsId,
                 HOST_INSTALLATION,
                 SYSTEM_ID,
+                "",
                 "",
                 "",
                 "",

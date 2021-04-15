@@ -14,35 +14,35 @@ public class ServiceNowParameterValue extends StringParameterValue {
     }
 
     public String getCredentialsForPublishedApp() {
-        return (String) JSONObject.fromObject(this.value).get("credentialsForPublishedApp");
+        return getSafeValue("credentialsForPublishedApp");
     }
 
     public String getInstanceForPublishedAppUrl() {
-        return (String) JSONObject.fromObject(this.value).get("instanceForPublishedAppUrl");
+        return getSafeValue("instanceForPublishedAppUrl");
     }
 
     public String getCredentialsForInstalledApp() {
-        return (String) JSONObject.fromObject(this.value).get("credentialsForInstalledApp");
+        return getSafeValue("credentialsForInstalledApp");
     }
 
     public String getInstanceForInstalledAppUrl() {
-        return (String) JSONObject.fromObject(this.value).get("instanceForInstalledAppUrl");
+        return getSafeValue("instanceForInstalledAppUrl");
     }
 
     public String getSysId() {
-        return (String) JSONObject.fromObject(this.value).get("sysId");
+        return getSafeValue("sysId");
     }
 
     public String getAppScope() {
-        return (String) JSONObject.fromObject(this.value).get("appScope");
+        return getSafeValue("appScope");
     }
 
     public String getPublishedAppVersion() {
-        return (String) JSONObject.fromObject(this.value).get("publishedAppVersion");
+        return getSafeValue("publishedAppVersion");
     }
 
     public String getRollbackAppVersion() {
-        return (String) JSONObject.fromObject(this.value).get("rollbackAppVersion");
+        return getSafeValue("rollbackAppVersion");
     }
 
     public Integer getProgressCheckInterval() {
@@ -53,8 +53,16 @@ public class ServiceNowParameterValue extends StringParameterValue {
         return null;
     }
 
+    public String getBatchRollbackId() {
+        return getSafeValue("batchRollbackId");
+    }
+
     public String getDescription() {
-        String paramName = "description";
-        return JSONObject.fromObject(this.value).has(paramName) ? JSONObject.fromObject(this.value).getString(paramName) : StringUtils.EMPTY;
+        return getSafeValue("description");
+    }
+
+    private String getSafeValue(String parameterName) {
+        return JSONObject.fromObject(this.value).has(parameterName) ?
+                JSONObject.fromObject(this.value).getString(parameterName) : StringUtils.EMPTY;
     }
 }

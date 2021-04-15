@@ -1,6 +1,5 @@
 package io.jenkins.plugins.servicenow.parameter;
 
-import com.iwombat.util.StringUtil;
 import hudson.Extension;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
@@ -8,7 +7,6 @@ import hudson.util.FormValidation;
 import io.jenkins.plugins.servicenow.Constants;
 import io.jenkins.plugins.servicenow.Messages;
 import io.jenkins.plugins.servicenow.utils.Validator;
-import jnr.ffi.annotations.In;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
@@ -33,6 +31,7 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
         String publishedAppVersion = "publishedAppVersion";
         String rollbackAppVersion = "rollbackAppVersion";
         String progressCheckInterval = "progressCheckInterval";
+        String batchRollbackId = "batchRollbackId";
     }
 
     private String credentialsForPublishedApp;
@@ -43,6 +42,7 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
     private String appScope;
     private String publishedAppVersion;
     private String rollbackAppVersion;
+    private String batchRollbackId;
     private Integer progressCheckInterval;
 
     public String getCredentialsForPublishedApp() {
@@ -77,6 +77,10 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
         return rollbackAppVersion;
     }
 
+    public String getBatchRollbackId() {
+        return batchRollbackId;
+    }
+
     public Integer getProgressCheckInterval() {
         return progressCheckInterval;
     }
@@ -94,7 +98,8 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
     @DataBoundConstructor
     public ServiceNowParameterDefinition(String description, String credentialsForPublishedApp,
             String instanceForPublishedAppUrl, String credentialsForInstalledApp, String instanceForInstalledAppUrl,
-            String sysId, String appScope, String publishedAppVersion, String rollbackAppVersion, Integer progressCheckInterval) {
+            String sysId, String appScope, String publishedAppVersion, String rollbackAppVersion,
+            String batchRollbackId, Integer progressCheckInterval) {
         super(PARAMETER_NAME, description);
         this.credentialsForPublishedApp = credentialsForPublishedApp;
         this.instanceForPublishedAppUrl = instanceForPublishedAppUrl;
@@ -104,6 +109,7 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
         this.appScope = appScope;
         this.publishedAppVersion = publishedAppVersion;
         this.rollbackAppVersion = rollbackAppVersion;
+        this.batchRollbackId = batchRollbackId;
         if(progressCheckInterval != null) {
             this.progressCheckInterval = progressCheckInterval;
         } else {
@@ -131,6 +137,7 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
                 "\"" + PARAMS_NAMES.appScope + "\":\"" + getSafeValue(appScope) + "\"," +
                 "\"" + PARAMS_NAMES.publishedAppVersion + "\":\"" + getSafeValue(publishedAppVersion) + "\"," +
                 "\"" + PARAMS_NAMES.rollbackAppVersion + "\":\"" + getSafeValue(rollbackAppVersion) + "\"," +
+                "\"" + PARAMS_NAMES.batchRollbackId + "\":\"" + getSafeValue(batchRollbackId) + "\"," +
                 "\"" + PARAMS_NAMES.progressCheckInterval + "\":\"" + getSafeValue(progressCheckInterval) + "\"}"); // create parameter with fields that are used between build steps
         return snParameterValue;
     }
@@ -138,24 +145,25 @@ public class ServiceNowParameterDefinition extends ParameterDefinition implement
     public static ServiceNowParameterDefinition createFrom(final String value) {
         JSONObject o = JSONObject.fromObject(value);
         return new ServiceNowParameterDefinition(
-                o.has(PARAMS_NAMES.description) ? o.getString(PARAMS_NAMES.description) : StringUtils.EMPTY,
-                o.getString(PARAMS_NAMES.credentialsForPublishedApp),
-                o.getString(PARAMS_NAMES.instanceForPublishedAppUrl),
-                o.getString(PARAMS_NAMES.credentialsForInstalledApp),
-                o.getString(PARAMS_NAMES.instanceForInstalledAppUrl),
-                o.getString(PARAMS_NAMES.sysId),
-                o.getString(PARAMS_NAMES.appScope),
-                o.getString(PARAMS_NAMES.publishedAppVersion),
-                o.getString(PARAMS_NAMES.rollbackAppVersion),
-                o.getInt(PARAMS_NAMES.progressCheckInterval)
+                getSafeValue((String)o.get(PARAMS_NAMES.description)),
+                getSafeValue((String)o.get(PARAMS_NAMES.credentialsForPublishedApp)),
+                getSafeValue((String)o.get(PARAMS_NAMES.instanceForPublishedAppUrl)),
+                getSafeValue((String)o.get(PARAMS_NAMES.credentialsForInstalledApp)),
+                getSafeValue((String)o.get(PARAMS_NAMES.instanceForInstalledAppUrl)),
+                getSafeValue((String)o.get(PARAMS_NAMES.sysId)),
+                getSafeValue((String)o.get(PARAMS_NAMES.appScope)),
+                getSafeValue((String)o.get(PARAMS_NAMES.publishedAppVersion)),
+                getSafeValue((String)o.get(PARAMS_NAMES.rollbackAppVersion)),
+                getSafeValue((String)o.get(PARAMS_NAMES.batchRollbackId)),
+                o.has(PARAMS_NAMES.progressCheckInterval) ? o.getInt(PARAMS_NAMES.progressCheckInterval) : null
         );
     }
 
-    private String getSafeValue(final String value) {
+    private static String getSafeValue(final String value) {
         return value != null ? value : StringUtils.EMPTY;
     }
 
-    private String getSafeValue(final Integer value) {
+    private static String getSafeValue(final Integer value) {
         return value != null ? value.toString() : StringUtils.EMPTY;
     }
 

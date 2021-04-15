@@ -6,10 +6,7 @@ import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.ParametersAction;
 import hudson.model.TaskListener;
-import io.jenkins.plugins.servicenow.api.ActionStatus;
 import io.jenkins.plugins.servicenow.api.ServiceNowAPIClient;
-import io.jenkins.plugins.servicenow.api.model.Result;
-import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -101,10 +98,15 @@ public class InstallAppBuilderTest extends BaseAPICallResultTest {
         installAppBuilder.setUrl(TestData.url);
         installAppBuilder.setCredentialsId(TestData.credentials);
         installAppBuilder.setAppVersion(TestData.applicationVersion);
-        installAppBuilder.setApiVersion(InstallAppBuilderTest.TestData.apiVersion);
+        installAppBuilder.setApiVersion(TestData.apiVersion);
         installAppBuilder.setAppScope(TestData.scope);
         installAppBuilder.setAppSysId((TestData.sysId));
-        //given(this.restClientMock.installApp(eq(TestData.scope), eq(TestData.sysId), eq(TestData.applicationVersion))).willReturn(getFailedResult("error"));
+        installAppBuilder.setBaseAppAutoUpgrade(TestData.updateBaseVersion);
+        installAppBuilder.setBaseAppVersion(TestData.baseAppVersion);
+        given(this.restClientMock.installApp(
+                eq(TestData.scope), eq(TestData.sysId), eq(TestData.applicationVersion),
+                eq(TestData.baseAppVersion), eq(TestData.updateBaseVersion)))
+                .willReturn(getFailedResult("error"));
 
         // when
         installAppBuilder.perform(runMock, null, launcherMock, taskListenerMock);

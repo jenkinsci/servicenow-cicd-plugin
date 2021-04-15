@@ -1,6 +1,8 @@
 package io.jenkins.plugins.servicenow;
 
 import io.jenkins.plugins.servicenow.api.ActionStatus;
+import io.jenkins.plugins.servicenow.api.model.LinkObject;
+import io.jenkins.plugins.servicenow.api.model.Links;
 import io.jenkins.plugins.servicenow.api.model.Result;
 import org.apache.commons.lang.StringUtils;
 
@@ -9,6 +11,9 @@ public abstract class BaseAPICallResultTest {
     protected Result getPendingResult() {
         final Result result = new Result();
         result.setStatus(ActionStatus.PENDING.getStatus());
+        result.setLinks(new Links());
+        result.getLinks().setResults(new LinkObject());
+        result.getLinks().setProgress(new LinkObject());
         return result;
     }
 
