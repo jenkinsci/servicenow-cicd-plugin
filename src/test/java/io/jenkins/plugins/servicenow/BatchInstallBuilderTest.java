@@ -12,6 +12,7 @@ import io.jenkins.plugins.servicenow.api.model.LinkObject;
 import io.jenkins.plugins.servicenow.api.model.Result;
 import io.jenkins.plugins.servicenow.parameter.ServiceNowParameterDefinition;
 import io.jenkins.plugins.servicenow.parameter.ServiceNowParameterValue;
+import net.sf.json.JSONObject;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,18 +23,21 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.core.Is.is;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BatchInstallBuilderTest extends BaseAPICallResultTest {
+
+    private Path resourceDirectory = Paths.get("src","test","resources");
 
     private BatchInstallBuilder batchInstallBuilder;
 
@@ -64,7 +68,7 @@ public class BatchInstallBuilderTest extends BaseAPICallResultTest {
     }
 
     @Test
-    public void performWithSuccess() throws IOException, InterruptedException, URISyntaxException {
+    public void performWithoutManifestFileWithSuccess() throws IOException, InterruptedException, URISyntaxException {
         // given
         batchInstallBuilder.setUrl(TestData.url);
         batchInstallBuilder.setCredentialsId(TestData.credentials);
@@ -103,6 +107,144 @@ public class BatchInstallBuilderTest extends BaseAPICallResultTest {
         verify(restClientMock, times(1))
                 .batchInstall(eq(TestData.batchName), eq(TestData.packages), eq(TestData.notes));
         verify(restClientMock, times(1)).checkProgress();
+    }
+
+    @Test
+    public void performWithBatchFileWithSuccess() throws IOException, URISyntaxException, InterruptedException {
+        // given
+        batchInstallBuilder.setUrl(TestData.url);
+        batchInstallBuilder.setCredentialsId(TestData.credentials);
+        batchInstallBuilder.setApiVersion(BatchInstallBuilderTest.TestData.apiVersion);
+
+        final String workspace = resourceDirectory.toFile().getAbsolutePath() + "/";
+        environment.put("WORKSPACE", workspace);
+        final String manifestFile = "sn_batch_manifest.json";
+        batchInstallBuilder.setUseFile(true);
+        batchInstallBuilder.setFile(manifestFile);
+
+        environment.put(ServiceNowParameterDefinition.PARAMETER_NAME,
+                "{'name': '" + ServiceNowParameterDefinition.PARAMETER_NAME + "'}"); // empty parameter snParam
+
+        Result expectedResult = getPendingResult();
+        expectedResult.getLinks().getResults().setUrl(TestData.resultsUrl);
+        LinkObject rollback = new LinkObject();
+        rollback.setId(TestData.rollbackId);
+        expectedResult.getLinks().setRollback(rollback);
+        given(this.restClientMock.batchInstall(anyString())).willReturn(expectedResult);
+        given(this.restClientMock.checkProgress()).willReturn(getSuccessfulResult(100,null));
+
+        // when
+        batchInstallBuilder.perform(runMock, null, launcherMock, taskListenerMock);
+
+        // then
+        assertThat(batchInstallBuilder.getRestClient(), is(restClientMock));
+
+        ArgumentCaptor<List<ParameterValue>> paramsCaptor = ArgumentCaptor.forClass(List.class);
+        verify(parametersActionMock, times(1)).createUpdated(paramsCaptor.capture());
+        List<ParameterValue> params = paramsCaptor.getValue();
+        assertThat(params, Matchers.hasSize(1));
+        ServiceNowParameterValue snParam = (ServiceNowParameterValue) params.stream()
+                .filter(p -> p instanceof ServiceNowParameterValue).findFirst().orElse(null);
+        // check if batchRollbackId is inside ServiceNowParameters
+        assertThat(snParam.getBatchRollbackId(), is(TestData.rollbackId));
+
+        ArgumentCaptor<String> payloadCaptor = ArgumentCaptor.forClass(String.class);
+        verify(restClientMock, times(1))
+                .batchInstall(payloadCaptor.capture());
+        String payload = payloadCaptor.getValue();
+        assertThat(payload, not(blankOrNullString()));
+        JSONObject jsonPayload = JSONObject.fromObject(payload);
+        assertThat(jsonPayload, notNullValue());
+        assertThat(jsonPayload.getString("name"), is(TestData.batchName));
+        assertThat(jsonPayload.getJSONArray("packages").size(), is(3));
+        assertThat(jsonPayload.has("notes"), is(false));
+        verify(restClientMock, times(1)).checkProgress();
+
+    }
+
+    @Test
+    public void performWithEmptyBatchFileFieldWithSuccess() throws IOException, URISyntaxException, InterruptedException {
+        // given
+        batchInstallBuilder.setUrl(TestData.url);
+        batchInstallBuilder.setCredentialsId(TestData.credentials);
+        batchInstallBuilder.setApiVersion(BatchInstallBuilderTest.TestData.apiVersion);
+
+        final String workspace = resourceDirectory.toFile().getAbsolutePath() + "/";
+        environment.put("WORKSPACE", workspace);
+        batchInstallBuilder.setUseFile(true);
+        batchInstallBuilder.setFile(null); // should be used default file name that exists in this test
+
+        environment.put(ServiceNowParameterDefinition.PARAMETER_NAME,
+                "{'name': '" + ServiceNowParameterDefinition.PARAMETER_NAME + "'}"); // empty parameter snParam
+
+        Result expectedResult = getPendingResult();
+        expectedResult.getLinks().getResults().setUrl(TestData.resultsUrl);
+        LinkObject rollback = new LinkObject();
+        rollback.setId(TestData.rollbackId);
+        expectedResult.getLinks().setRollback(rollback);
+        given(this.restClientMock.batchInstall(anyString())).willReturn(expectedResult);
+        given(this.restClientMock.checkProgress()).willReturn(getSuccessfulResult(100,null));
+
+        // when
+        batchInstallBuilder.perform(runMock, null, launcherMock, taskListenerMock);
+
+        // then
+        assertThat(batchInstallBuilder.getRestClient(), is(restClientMock));
+
+        ArgumentCaptor<List<ParameterValue>> paramsCaptor = ArgumentCaptor.forClass(List.class);
+        verify(parametersActionMock, times(1)).createUpdated(paramsCaptor.capture());
+        List<ParameterValue> params = paramsCaptor.getValue();
+        assertThat(params, Matchers.hasSize(1));
+        ServiceNowParameterValue snParam = (ServiceNowParameterValue) params.stream()
+                .filter(p -> p instanceof ServiceNowParameterValue).findFirst().orElse(null);
+        // check if batchRollbackId is inside ServiceNowParameters
+        assertThat(snParam.getBatchRollbackId(), is(TestData.rollbackId));
+
+        ArgumentCaptor<String> payloadCaptor = ArgumentCaptor.forClass(String.class);
+        verify(restClientMock, times(1))
+                .batchInstall(payloadCaptor.capture());
+        String payload = payloadCaptor.getValue();
+        assertThat(payload, not(blankOrNullString()));
+        JSONObject jsonPayload = JSONObject.fromObject(payload);
+        assertThat(jsonPayload, notNullValue());
+        assertThat(jsonPayload.getString("name"), is(TestData.batchName));
+        assertThat(jsonPayload.getJSONArray("packages").size(), is(1));
+        assertThat(jsonPayload.has("notes"), is(false));
+        verify(restClientMock, times(1)).checkProgress();
+
+    }
+
+    @Test
+    public void performWithNotExistingBatchFileWithBuildFailed() throws IOException, URISyntaxException, InterruptedException {
+        // given
+        batchInstallBuilder.setUrl(TestData.url);
+        batchInstallBuilder.setCredentialsId(TestData.credentials);
+        batchInstallBuilder.setApiVersion(BatchInstallBuilderTest.TestData.apiVersion);
+
+        batchInstallBuilder.setUseFile(true);
+        final String workspace = resourceDirectory.toFile().getAbsolutePath() + "/";
+        environment.put("WORKSPACE", workspace);
+        final String manifestFile = "notExisting.json";
+        batchInstallBuilder.setFile(manifestFile);
+
+        environment.put(ServiceNowParameterDefinition.PARAMETER_NAME,
+                "{'name': '" + ServiceNowParameterDefinition.PARAMETER_NAME + "'}"); // empty parameter snParam
+
+        given(this.restClientMock.batchInstall(eq(""))).willReturn(getFailedResult("payload empty"));
+
+        // when
+        try {
+            batchInstallBuilder.perform(runMock, null, launcherMock, taskListenerMock);
+        } catch(AbortException ex) {
+            // expected
+        }
+
+        // then
+        assertThat(batchInstallBuilder.getRestClient(), is(restClientMock));
+        verify(parametersActionMock, never()).createUpdated(anyList());
+        verify(restClientMock, times(1))
+                .batchInstall(eq(""));
+        verify(restClientMock, never()).checkProgress();
     }
 
     @Test(expected = AbortException.class)

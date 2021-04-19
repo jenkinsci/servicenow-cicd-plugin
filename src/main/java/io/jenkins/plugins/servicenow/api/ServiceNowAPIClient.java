@@ -48,6 +48,8 @@ public class ServiceNowAPIClient {
         return removeTrailingSlash(this.apiUrl) + "/api/now/table/";
     }
 
+    private static final String BATCH_INSTALL_ENDPOINT = "app/batch/install";
+
     private final String apiUrl;
     private final String username;
     private final Secret password;
@@ -290,8 +292,17 @@ public class ServiceNowAPIClient {
         return sendRequest(endpoint, null, requestBody);
     }
 
+    public Result batchInstall(String payload) throws IOException, URISyntaxException {
+        final String endpoint = BATCH_INSTALL_ENDPOINT;
+        LOG.debug("ServiceNow API call > batch install");
+
+        LOG.debug("Batch install payload: " + payload);
+
+        return sendRequest(endpoint, null, payload);
+    }
+
     public Result batchInstall(final String batchName, final String packages, final String notes) throws IOException, URISyntaxException {
-        final String endpoint = "app/batch/install";
+        final String endpoint = BATCH_INSTALL_ENDPOINT;
         LOG.debug("ServiceNow API call > batch install");
 
         String requestBody = "{" +
