@@ -142,7 +142,7 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
     private int retrieveProgressCheckIntervalParameter(EnvVars environment) {
         Integer parameter = null;
         try {
-            parameter = getGlobalSNParams() != null && StringUtils.isNotBlank(getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.progressCheckInterval)) ?
+            parameter = getGlobalSNParams() != null && getGlobalSNParams().getOrDefault(ServiceNowParameterDefinition.PARAMS_NAMES.progressCheckInterval, null) != null ?
                     getGlobalSNParams().getInt(ServiceNowParameterDefinition.PARAMS_NAMES.progressCheckInterval) :
                     Integer.parseInt(environment.get(BuildParameters.progressCheckInterval));
         } catch(NumberFormatException ex) {

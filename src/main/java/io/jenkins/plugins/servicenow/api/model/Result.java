@@ -89,12 +89,17 @@ public class Result extends JsonResponseObject {
             final LinkObject progress = links.getProgress();
             if(progress != null) {
                 sb.append("\n\t\t'progress':");
-                toString(sb, progress);
+                sb.append("\n\t\t\t").append(progress);
             }
             final LinkObject source = links.getSource();
             if(source != null) {
                 sb.append("\n\t\t'source':");
-                toString(sb, source);
+                sb.append("\n\t\t\t").append(source);
+            }
+            final LinkObject results = links.getResults();
+            if(results != null) {
+                sb.append("\n\t\t'results':");
+                sb.append("\n\t\t\t").append(results);
             }
         }
         sb.append("\n\t'status': ").append(status);
@@ -104,10 +109,5 @@ public class Result extends JsonResponseObject {
         sb.append("\n\t'error': ").append(error);
         sb.append("\n\t'percentComplete': ").append(percentComplete);
         return sb.toString();
-    }
-
-    private void toString(final StringBuffer sb, final LinkObject linkObject) {
-        sb.append("\n\t\t\t'id': ").append(linkObject.getId());
-        sb.append("\n\t\t\t'url': ").append(linkObject.getUrl());
     }
 }

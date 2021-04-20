@@ -26,7 +26,7 @@ public class ServiceNowParameterDefinitionIntegrationTest {
         // given
         project = jenkins.createFreeStyleProject("testServiceNowParameter");
         ServiceNowParameterDefinition serviceNowParameter = new ServiceNowParameterDefinition(null, null,
-                TestData.instanceForPublishedAppUrl_correct, null, TestData.instanceForInstalledAppUrl_correct, null, null, null, null, TestData.progressCheckInterval_correct);
+                TestData.instanceForPublishedAppUrl_correct, null, TestData.instanceForInstalledAppUrl_correct, null, null, null, null, null, TestData.progressCheckInterval_correct);
         project.addProperty(new ParametersDefinitionProperty(serviceNowParameter));
 
         // when
@@ -45,7 +45,7 @@ public class ServiceNowParameterDefinitionIntegrationTest {
         // given
         project = jenkins.createFreeStyleProject("testServiceNowParameter");
         ServiceNowParameterDefinition serviceNowParameter = new ServiceNowParameterDefinition(null, null,
-                TestData.instanceForPublishedAppUrl_incorrect, null, TestData.instanceForInstalledAppUrl_incorrect, null, null, null, null, TestData.progressCheckInterval_incorrect);
+                TestData.instanceForPublishedAppUrl_incorrect, null, TestData.instanceForInstalledAppUrl_incorrect, null, null, null, null, null, TestData.progressCheckInterval_incorrect);
         project.addProperty(new ParametersDefinitionProperty(serviceNowParameter));
 
         // when

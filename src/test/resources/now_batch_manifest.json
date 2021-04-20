@@ -1,0 +1,12 @@
+{
+  "name": "Test batch name",
+  "packages": [
+    {
+      "id": "syd_id_abcefghi",
+      "type": "application",
+      "load_demo_data": false,
+      "requested_version": "1.0.2",
+      "notes": "User specific text to describe this application install"
+    }
+  ]
+}

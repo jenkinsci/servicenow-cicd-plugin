@@ -1,0 +1,70 @@
+<div>
+    Required. JSON array, where each object specifies details of a package to install.
+    <pre>
+        <code>
+    [{
+        "id": "String",
+        "load_demo_data": Boolean,
+        "notes": "String",
+        "requested_customized_version": "String",
+        "requested_version": "String",
+        "type": "String"
+    }]
+        </code>
+    </pre>
+    <table style="border-collapse: collapse; text-align: left;">
+        <tr style="border-bottom: 1px solid #ccc;">
+            <th>id</th>
+            <td>
+                Required. Sys_id of the application or identifier of the plugin to install.
+            </td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <th>load_demo_data</th>
+            <td>
+                Flag that indicates whether demo data is loaded when installing the package.
+                <br/>Valid values:
+                <br/>&nbsp;<code>true</code>: Demo data should be loaded.
+                <br/>&nbsp;<code>false</code>: Demo data should not be loaded.
+                <br/>Default: <code>false</code>
+            </td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <th>notes</th>
+            <td>
+                User specified notes about the package.
+                <br/>Default: <code>null</code>
+            </td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <th>requested_customized_version</th>
+            <td>
+                Only applicable when packages.type is set to application. Version of the store application customization package to install, such as 1.0.2 or 2.3.
+            </td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <th>requested_customized_version</th>
+            <td>
+                Only applicable when packages.type is set to application. Version of the store application customization package to install, such as 1.0.2 or 2.3.
+                <p/>Default: None. If this is not set, then the system does not look for customizations for the application.
+            </td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <th>requested_version</th>
+            <td>
+                Required if <code>type</code> is set to application; ignored if set to plugin. Version of the package to install, such as 1.0.2 or 2.3.
+            </td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <th>type</th>
+            <td>
+                Required. Type of package.
+                <br/>Valid values:
+                <ul>
+                    <li><code>application</code></li>
+                    <li><code>plugin</code></li>
+                </ul>
+            </td>
+        </tr>
+    </table>
+</div>

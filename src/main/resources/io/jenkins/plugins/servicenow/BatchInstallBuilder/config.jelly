@@ -1,0 +1,38 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
+         xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    <l:js src="plugin/servicenow-cicd/js/snbuilders-support.js"/>
+    <j:set var="builderId" value="${descriptor.generateBuilderId()}"/>
+    <f:entry title="${%UseFile}" field="useFile">
+        <f:checkbox onclick="BatchInstallBuilder.adjustVisibility('${builderId}', this.checked)"/>
+    </f:entry>
+    <f:entry title="${%BatchFile}" field="file">
+        <f:textbox id="${builderId}-file" value="${instance.file != null ? instance.file : descriptor.defaultManifestFile}"/>
+    </f:entry>
+    <f:entry title="${%Name}" field="batchName">
+        <f:textbox id="${builderId}-batchName" />
+    </f:entry>
+    <f:entry title="${%Packages}" field="packages">
+        <f:textarea codemirror-mode="javascript" codemirror-config="json:true" id="${builderId}-packages"/>
+    </f:entry>
+    <f:entry title="${%Notes}" field="notes">
+        <f:textarea id="${builderId}-notes"/>
+    </f:entry>
+    <f:advanced>
+        <f:entry title="${%Url}" field="url">
+            <f:textbox/>
+        </f:entry>
+        <f:entry title="${%Credentials}" field="credentialsId">
+            <f:textbox/>
+        </f:entry>
+        <f:entry title="${%ApiVersion}" field="apiVersion">
+            <f:textbox/>
+        </f:entry>
+    </f:advanced>
+
+    <script>
+        setTimeout(function() {
+            BatchInstallBuilder.adjustVisibility('${builderId}', ${instance.useFile});
+        }, 1000);
+    </script>
+</j:jelly>

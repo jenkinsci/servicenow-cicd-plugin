@@ -133,6 +133,31 @@ public class ServiceNowParameterValueTest extends TestCase {
         assertThat(result).isNull();
     }
 
+    public void testNotExistingBatchRollbackId() {
+        // given
+        ServiceNowParameterValue parameterValue = new ServiceNowParameterValue("test", TestData.getJson());
+
+        // when
+        String result = parameterValue.getBatchRollbackId();
+
+        // then
+        assertThat(result).isBlank();
+    }
+
+    public void testExistingBatchRollbackId() {
+        // given
+        String replace = "}";
+        String by = ",\"batchRollbackId\":\"" + TestData.batchRollbackId + "\"}";
+        String json = TestData.getJson().replace(replace, by);
+        ServiceNowParameterValue parameterValue = new ServiceNowParameterValue("test", json);
+
+        // when
+        String result = parameterValue.getBatchRollbackId();
+
+        // then
+        assertThat(result).isEqualTo(TestData.batchRollbackId);
+    }
+
     private interface TestData {
         String description = "description";
         String credentialsForInstalledApp = "88dbbe69-0e00-4dd5-838b-2fbd8dfedeb4";
@@ -144,6 +169,7 @@ public class ServiceNowParameterValueTest extends TestCase {
         String rollbackAppVersion = "1028.0.3";
         String systemId = "123erwqe";
         Integer progressCheckInterval = 100;
+        String batchRollbackId = "qwerty";
 
         static String getJson() {
             return "{\"name\":\"snParam\"," +
