@@ -240,7 +240,7 @@ public class BatchInstallBuilder extends ProgressBuilder {
 
     @Symbol("snBatchInstall")
     @Extension
-    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
+    public static final class DescriptorImpl extends SNDescriptor {
 
         public FormValidation doCheckUrl(@QueryParameter String value) {
             if(StringUtils.isNotBlank(value)) {
@@ -256,15 +256,9 @@ public class BatchInstallBuilder extends ProgressBuilder {
             return true;
         }
 
-
         @Override
         public String getDisplayName() {
             return Messages.BatchInstallBuilder_DescriptorImpl_DisplayName();
-        }
-
-        @JavaScriptMethod
-        public synchronized String generateBuilderId() {
-            return RandomStringUtils.random(5, true, false);
         }
 
         public String getDefaultManifestFile() {

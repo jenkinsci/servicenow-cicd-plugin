@@ -1,29 +1,26 @@
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:l="/lib/layout">
+    <l:js src="plugin/servicenow-cicd/js/snbuilders-support.js"/>
+    <j:set var="builderId" value="${descriptor.generateBuilderId()}"/>
     <f:entry title="${%ScanType}" field="scanType">
         <f:select
-            onchange="InstanceScanBuilder.adjustFieldsVisibility(this.value)"/>
-        <script>
-            window.addEventListener("load", function(){
-                InstanceScanBuilder.adjustFieldsVisibility('${instance.scanType}');
-            },false);
-        </script>
+            onchange="InstanceScanBuilder.adjustVisibility('${builderId}', this.value)"/>
     </f:entry>
     <f:entry title="${%TargetTable}" field="targetTable">
-        <f:textbox clazz="js-servicenow-instanceScanBuilder-targetTable"/>
+        <f:textbox id="${builderId}-targetTable"/>
     </f:entry>
     <f:entry title="${%TargetRecordSysId}" field="targetRecordSysId">
-        <f:textbox clazz="js-servicenow-instanceScanBuilder-targetRecord"/>
+        <f:textbox id="${builderId}-targetRecord"/>
     </f:entry>
     <f:entry title="${%ComboSysId}" field="comboSysId">
-        <f:textbox clazz="js-servicenow-instanceScanBuilder-targetCombo"/>
+        <f:textbox id="${builderId}-targetCombo"/>
     </f:entry>
     <f:block>
         <f:entry title="${%SuiteSysId}" field="suiteSysId">
-            <f:textbox clazz="js-servicenow-instanceScanBuilder-suite"/>
+            <f:textbox id="${builderId}-suite"/>
         </f:entry>
         <f:entry title="${%RequestBody}" field="requestBody">
-            <f:textarea id="servicenow-instanceScanBuilder-requestBody"/>
+            <f:textarea id="${builderId}-requestBody"/>
         </f:entry>
     </f:block>
     <f:advanced>
@@ -36,64 +33,8 @@
     </f:advanced>
 
     <script>
-        var InstanceScanBuilder = {
-            adjustFieldsVisibility: (scanType) => {
-                switch(scanType) {
-                    case 'fullScan':
-                        InstanceScanBuilder.disableAll();
-                        break;
-                    case 'pointScan':
-                        InstanceScanBuilder.enablePointScan();
-                        break;
-                    case 'scanWithCombo':
-                        InstanceScanBuilder.enableComboScan();
-                        break;
-                    case 'scanWithSuiteOnScopedApps':
-                    case 'scanWithSuiteOnUpdateSets':
-                        InstanceScanBuilder.enableSuiteScan();
-                        break;
-                    default:
-                        // the same as for for fullScan
-                        InstanceScanBuilder.disableAll();
-                }
-            },
-
-            disableAll: () => {
-                document.querySelector('.js-servicenow-instanceScanBuilder-targetTable').disabled='disabled';
-                document.querySelector('.js-servicenow-instanceScanBuilder-targetRecord').disabled='disabled';
-                document.querySelector('.js-servicenow-instanceScanBuilder-targetCombo').disabled='disabled';
-                document.querySelector('.js-servicenow-instanceScanBuilder-suite').disabled='disabled';
-                document.getElementById('servicenow-instanceScanBuilder-requestBody').disabled='disabled';
-            },
-
-            enableAll: () => {
-                document.querySelector('.js-servicenow-instanceScanBuilder-targetTable').disabled=null;
-                document.querySelector('.js-servicenow-instanceScanBuilder-targetRecord').disabled=null;
-                document.querySelector('.js-servicenow-instanceScanBuilder-targetCombo').disabled=null;
-                document.querySelector('.js-servicenow-instanceScanBuilder-suite').disabled=null;
-                document.getElementById('servicenow-instanceScanBuilder-requestBody').disabled=null;
-            },
-            enablePointScan: () => {
-                document.querySelector('.js-servicenow-instanceScanBuilder-targetTable').disabled=null;
-                document.querySelector('.js-servicenow-instanceScanBuilder-targetRecord').disabled=null;
-                document.querySelector('.js-servicenow-instanceScanBuilder-targetCombo').disabled='disabled';
-                document.querySelector('.js-servicenow-instanceScanBuilder-suite').disabled='disabled';
-                document.getElementById('servicenow-instanceScanBuilder-requestBody').disabled='disabled';
-            },
-            enableComboScan: () => {
-                document.querySelector('.js-servicenow-instanceScanBuilder-targetTable').disabled='disabled';
-                document.querySelector('.js-servicenow-instanceScanBuilder-targetRecord').disabled='disabled';
-                document.querySelector('.js-servicenow-instanceScanBuilder-targetCombo').disabled=null;
-                document.querySelector('.js-servicenow-instanceScanBuilder-suite').disabled='disabled';
-                document.getElementById('servicenow-instanceScanBuilder-requestBody').disabled='disabled';
-            },
-            enableSuiteScan: () => {
-                document.querySelector('.js-servicenow-instanceScanBuilder-targetTable').disabled='disabled';
-                document.querySelector('.js-servicenow-instanceScanBuilder-targetRecord').disabled='disabled';
-                document.querySelector('.js-servicenow-instanceScanBuilder-targetCombo').disabled='disabled';
-                document.querySelector('.js-servicenow-instanceScanBuilder-suite').disabled=null;
-                document.getElementById('servicenow-instanceScanBuilder-requestBody').disabled=null;
-            }
-        }
+        setTimeout(function () {
+            InstanceScanBuilder.adjustVisibility('${builderId}', '${instance.scanType}');
+        }, 1000);
     </script>
 </j:jelly>

@@ -259,7 +259,7 @@ public class InstanceScanBuilder extends ProgressBuilder {
 
     @Symbol("snInstanceScan")
     @Extension
-    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
+    public static final class DescriptorImpl extends SNDescriptor {
 
         public FormValidation doCheckUrl(@QueryParameter String value) {
             if(StringUtils.isNotBlank(value)) {
