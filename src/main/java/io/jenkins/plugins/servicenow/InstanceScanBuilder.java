@@ -182,14 +182,21 @@ public class InstanceScanBuilder extends ProgressBuilder {
                         e.printStackTrace(taskListener.getLogger());
                     }
                     if(serviceNowResult != null && ActionStatus.SUCCESSFUL.getStatus().equals(serviceNowResult.getStatus())) {
-                        //taskListener.getLogger().println(serviceNowResult.toString());
-                        taskListener.getLogger().println("\nInstance scan executed.");
+                        taskListener.getLogger().println("\nInstance scan executed with message: '" + serviceNowResult.getStatusMessage() + "'.");
                         result = true;
                     } else {
                         String message = serviceNowResult != null ? serviceNowResult.getStatusMessage() : "[no message]";
-                        taskListener.getLogger().println("\nAction DONE but failed: " + message);
+                        String errorMsg = serviceNowResult != null ? serviceNowResult.getError() : StringUtils.EMPTY;
+                        taskListener.getLogger().println("\nAction DONE but failed: '" + message + "'.");
+                        if(StringUtils.isNotBlank(errorMsg)) {
+                            taskListener.getLogger().println("Error message in the response from ServiceNow instance: '" + errorMsg + "'.");
+                        }
                         result = false;
                     }
+
+                    getResultLink(serviceNowResult).ifPresent(resultLink -> {
+                        taskListener.getLogger().println("Link with results after scan: " + resultLink);
+                    });
                 }
             } else { // serve result with the status FAILED
                 LOG.error("Instance scan request replied with failure: " + serviceNowResult);
@@ -201,6 +208,13 @@ public class InstanceScanBuilder extends ProgressBuilder {
         }
 
         return result;
+    }
+
+    private Optional<String> getResultLink(final Result serviceNowResult) {
+        if(serviceNowResult != null && serviceNowResult.getLinks() != null && serviceNowResult.getLinks().getResults() != null) {
+            return Optional.of(serviceNowResult.getLinks().getResults().getUrl());
+        }
+        return Optional.empty();
     }
 
     private void checkInputRequirements() {
