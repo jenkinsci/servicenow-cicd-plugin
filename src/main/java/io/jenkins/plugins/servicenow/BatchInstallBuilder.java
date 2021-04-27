@@ -183,14 +183,18 @@ public class BatchInstallBuilder extends ProgressBuilder {
         if(StringUtils.isBlank(this.file)) {
             throw new IllegalArgumentException("Batch file was not defined!");
         }
-
         EnvVars environment = run.getEnvironment(taskListener);
-        if(StringUtils.isBlank(environment.get("WORKSPACE"))) {
-            taskListener.getLogger().println(
-                    "Environment variable 'WORKSPACE' is not visible inside the build step! Please initialize it first!");
-        }
 
-        Path filePath = Paths.get(environment.get("WORKSPACE"), this.file);
+        Path filePath = Paths.get(this.file);
+        if(!filePath.isAbsolute() || !filePath.toFile().exists()) {
+            final String workspace = environment.get("WORKSPACE");
+            if(StringUtils.isBlank(workspace)) {
+                taskListener.getLogger().println(
+                        "Environment variable 'WORKSPACE' is not visible inside the build step! Please initialize it first or give absolute path to the batch manifest file!");
+            } else {
+                filePath = Paths.get(environment.get("WORKSPACE"), this.file);
+            }
+        }
         String payload = "";
         try {
             payload = Files.lines(filePath).collect(Collectors.joining(" "));

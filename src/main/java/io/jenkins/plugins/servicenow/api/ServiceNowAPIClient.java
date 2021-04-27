@@ -212,7 +212,15 @@ public class ServiceNowAPIClient {
     }
 
     public String getCurrentAppVersion(final String applicationScope, final String systemId) {
-        String endpoint = getTableApiUrl() + "sys_app";
+        return getAppVersion(false, applicationScope, systemId);
+    }
+
+    public String getCurrentAppCustomizationVersion(final String applicationScope, final String systemId) {
+        return getAppVersion(true, applicationScope, systemId);
+    }
+
+    private String getAppVersion(boolean customized, final String applicationScope, final String systemId) {
+        String endpoint = getTableApiUrl() + (customized ? "sys_app_customization" : "sys_app");
         if(StringUtils.isNotBlank(systemId)) {
             endpoint += "/" + systemId + "?sysparm_fields=version";
             final Result result = sendRequest(endpoint, null);
