@@ -42,6 +42,7 @@ public class PublishAppBuilder extends ProgressBuilder {
     private String appVersion;
     private String devNotes;
     private Boolean obtainVersionAutomatically = false;
+    private Integer incrementBy;
 
     private String calculatedAppVersion;
 
@@ -95,6 +96,15 @@ public class PublishAppBuilder extends ProgressBuilder {
     @DataBoundSetter
     public void setObtainVersionAutomatically(Boolean obtainVersionAutomatically) {
         this.obtainVersionAutomatically = obtainVersionAutomatically;
+    }
+
+    public Integer getIncrementBy() {
+        return incrementBy;
+    }
+
+    @DataBoundSetter
+    public void setIncrementBy(Integer incrementBy) {
+        this.incrementBy = incrementBy;
     }
 
     @Inject
@@ -233,7 +243,16 @@ public class PublishAppBuilder extends ProgressBuilder {
 
     private String getNextVersionFromAPI() {
         if(getRestClient() != null) {
-            final String currentVersion = getRestClient().getCurrentAppVersion(this.getAppScope(), this.getAppSysId());
+            String currentVersion = getRestClient().getCurrentAppCustomizationVersion(this.getAppScope(), this.getAppSysId());
+
+            if(StringUtils.isBlank(currentVersion)) {
+                currentVersion = getRestClient().getCurrentAppVersion(this.getAppScope(), this.getAppSysId());
+                LOG.debug("Found current version of standard application taken from API. [appScope=" + this.getAppScope() +
+                        ", appSysId=" + this.getAppSysId() + ",version=" + currentVersion + "]");
+            } else {
+                LOG.debug("Found current version of customized application taken from API. [appScope=" + this.getAppScope() +
+                        ", appSysId=" + this.getAppSysId() + ",version=" + currentVersion + "]");
+            }
             return getNextAppVersion(currentVersion);
         }
         return null;
@@ -244,11 +263,12 @@ public class PublishAppBuilder extends ProgressBuilder {
      * @param currentVersion Current version of the application
      * @return Next valid application version.
      */
-    public static String getNextAppVersion(String currentVersion) {
+    public String getNextAppVersion(String currentVersion) {
         if(StringUtils.isNotBlank(currentVersion)) {
             String[] versionNumbers = currentVersion.split("\\.");
             if(versionNumbers.length > 1) {
-                versionNumbers[versionNumbers.length - 1] = String.valueOf(Integer.parseInt(versionNumbers[2]) + 1);
+                versionNumbers[versionNumbers.length - 1] = String.valueOf(
+                        Integer.parseInt(versionNumbers[2]) + Optional.ofNullable(this.incrementBy).orElse(0));
                 return Arrays.stream(versionNumbers).collect(Collectors.joining("."));
             }
         }
@@ -273,12 +293,21 @@ public class PublishAppBuilder extends ProgressBuilder {
 
     @Symbol("snPublishApp")
     @Extension
-    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
+    public static final class DescriptorImpl extends SNDescriptor {
 
         public FormValidation doCheckUrl(@QueryParameter String value) {
             if(StringUtils.isNotBlank(value)) {
                 if(!Validator.validateInstanceUrl(value)) {
                     return FormValidation.error(Messages.ServiceNowBuilder_DescriptorImpl_errors_wrongUrl());
+                }
+            }
+            return FormValidation.ok();
+        }
+
+        public FormValidation doCheckIncrementBy(@QueryParameter Integer value) {
+            if(value != null) {
+                if(value < 0) {
+                    return FormValidation.error(Messages.PublishAppBuilder_DescriptorImpl_error_incrementBy_negative());
                 }
             }
             return FormValidation.ok();
