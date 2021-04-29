@@ -2,6 +2,7 @@ package io.jenkins.plugins.servicenow;
 
 import hudson.AbortException;
 import hudson.EnvVars;
+import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.ParameterValue;
@@ -13,6 +14,7 @@ import io.jenkins.plugins.servicenow.api.model.Result;
 import io.jenkins.plugins.servicenow.parameter.ServiceNowParameterDefinition;
 import io.jenkins.plugins.servicenow.parameter.ServiceNowParameterValue;
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,6 +32,7 @@ import java.util.List;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.core.Is.is;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -116,8 +119,7 @@ public class BatchInstallBuilderTest extends BaseAPICallResultTest {
         batchInstallBuilder.setCredentialsId(TestData.credentials);
         batchInstallBuilder.setApiVersion(BatchInstallBuilderTest.TestData.apiVersion);
 
-        final String workspace = resourceDirectory.toFile().getAbsolutePath() + "/";
-        environment.put("WORKSPACE", workspace);
+        FilePath workspacePath = createWorkspace(null);
         final String manifestFile = "sn_batch_manifest.json";
         batchInstallBuilder.setUseFile(true);
         batchInstallBuilder.setFile(manifestFile);
@@ -134,7 +136,7 @@ public class BatchInstallBuilderTest extends BaseAPICallResultTest {
         given(this.restClientMock.checkProgress()).willReturn(getSuccessfulResult(100,null));
 
         // when
-        batchInstallBuilder.perform(runMock, null, launcherMock, taskListenerMock);
+        batchInstallBuilder.perform(runMock, workspacePath, launcherMock, taskListenerMock);
 
         // then
         assertThat(batchInstallBuilder.getRestClient(), is(restClientMock));
@@ -169,8 +171,7 @@ public class BatchInstallBuilderTest extends BaseAPICallResultTest {
         batchInstallBuilder.setCredentialsId(TestData.credentials);
         batchInstallBuilder.setApiVersion(BatchInstallBuilderTest.TestData.apiVersion);
 
-        final String workspace = resourceDirectory.toFile().getAbsolutePath() + "/";
-        environment.put("WORKSPACE", workspace);
+        FilePath workspacePath = createWorkspace(null);
         batchInstallBuilder.setUseFile(true);
         batchInstallBuilder.setFile(null); // should be used default file name that exists in this test
 
@@ -186,7 +187,7 @@ public class BatchInstallBuilderTest extends BaseAPICallResultTest {
         given(this.restClientMock.checkProgress()).willReturn(getSuccessfulResult(100,null));
 
         // when
-        batchInstallBuilder.perform(runMock, null, launcherMock, taskListenerMock);
+        batchInstallBuilder.perform(runMock, workspacePath, launcherMock, taskListenerMock);
 
         // then
         assertThat(batchInstallBuilder.getRestClient(), is(restClientMock));
@@ -222,8 +223,7 @@ public class BatchInstallBuilderTest extends BaseAPICallResultTest {
         batchInstallBuilder.setApiVersion(BatchInstallBuilderTest.TestData.apiVersion);
 
         batchInstallBuilder.setUseFile(true);
-        final String workspace = resourceDirectory.toFile().getAbsolutePath() + "/";
-        environment.put("WORKSPACE", workspace);
+        FilePath workspacePath = createWorkspace(null);
         final String manifestFile = "notExisting.json";
         batchInstallBuilder.setFile(manifestFile);
 
@@ -234,7 +234,7 @@ public class BatchInstallBuilderTest extends BaseAPICallResultTest {
 
         // when
         try {
-            batchInstallBuilder.perform(runMock, null, launcherMock, taskListenerMock);
+            batchInstallBuilder.perform(runMock, workspacePath, launcherMock, taskListenerMock);
         } catch(AbortException ex) {
             // expected
         }
@@ -264,6 +264,14 @@ public class BatchInstallBuilderTest extends BaseAPICallResultTest {
 
         // then
         // expect an exception
+    }
+
+    private FilePath createWorkspace(String workspacePath) {
+        if(StringUtils.isBlank(workspacePath)) {
+            return new FilePath(this.resourceDirectory.toFile());
+        } else {
+            return new FilePath(Paths.get(workspacePath).toFile());
+        }
     }
 
     private interface TestData {
