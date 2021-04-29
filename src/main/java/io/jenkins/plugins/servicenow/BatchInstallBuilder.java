@@ -3,9 +3,11 @@ package io.jenkins.plugins.servicenow;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.EnvVars;
 import hudson.Extension;
-import hudson.model.*;
-import hudson.tasks.BuildStepDescriptor;
-import hudson.tasks.Builder;
+import hudson.FilePath;
+import hudson.model.AbstractProject;
+import hudson.model.ParameterValue;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 import io.jenkins.plugins.servicenow.api.ActionStatus;
 import io.jenkins.plugins.servicenow.api.ServiceNowApiException;
@@ -13,24 +15,20 @@ import io.jenkins.plugins.servicenow.api.model.Result;
 import io.jenkins.plugins.servicenow.parameter.ServiceNowParameterDefinition;
 import io.jenkins.plugins.servicenow.utils.Validator;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.bind.JavaScriptMethod;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Build step responsible for publishing the specified application and all of its artifacts to the application repository.
@@ -177,8 +175,6 @@ public class BatchInstallBuilder extends ProgressBuilder {
         }
     }
 
-    @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE",
-            justification = "many null checks not recognized")
     private String getJsonManifestFromFile(Run<?, ?> run, TaskListener taskListener) throws IOException, InterruptedException {
         if(StringUtils.isBlank(this.file)) {
             throw new IllegalArgumentException("Batch file was not defined!");
@@ -186,24 +182,19 @@ public class BatchInstallBuilder extends ProgressBuilder {
         EnvVars environment = run.getEnvironment(taskListener);
 
         Path filePath = Paths.get(this.file);
-        if(!filePath.isAbsolute() || !filePath.toFile().exists()) {
-            final String workspace = environment.get("WORKSPACE");
-            if(StringUtils.isBlank(workspace)) {
-                taskListener.getLogger().println(
-                        "Environment variable 'WORKSPACE' is not visible inside the build step! Please initialize it first or give absolute path to the batch manifest file!");
-            } else {
-                filePath = Paths.get(environment.get("WORKSPACE"), this.file);
+        FilePath manifestFile = new FilePath(filePath.toFile());
+        if(!manifestFile.exists()) {
+            if(this.workspace == null) {
+                throw new IOException("Path to the workspace was not found!");
             }
+            manifestFile = this.workspace.child(this.file);
         }
+
         String payload = "";
         try {
-            payload = Files.lines(filePath).collect(Collectors.joining(" "));
+            payload = manifestFile.readToString();
         } catch(IOException ex) {
-            String dirPath = "";
-            if(filePath != null && filePath.getParent() != null && filePath.getParent().toAbsolutePath() != null) {
-                dirPath = filePath.getParent().toAbsolutePath().toString();
-            }
-            taskListener.getLogger().println("Batch file '" + this.file + "' was not found in " + dirPath);
+            taskListener.getLogger().println("Batch file '" + this.file + "' was not found in " + this.workspace.getRemote());
             LOG.error("Batch file was not found for the build " + environment.get("JOB_NAME") + "#" + environment.get("BUILD_NUMBER") + "!", ex);
         }
         return payload;

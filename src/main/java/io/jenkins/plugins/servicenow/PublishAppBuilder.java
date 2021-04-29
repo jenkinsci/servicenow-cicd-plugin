@@ -255,7 +255,7 @@ public class PublishAppBuilder extends ProgressBuilder {
     }
 
     private void setNextPublishedVersionFromSC(EnvVars environment) {
-        this.calculatedAppVersion = Optional.ofNullable(getNextVersionFromSC(environment.get("WORKSPACE")))
+        this.calculatedAppVersion = Optional.ofNullable(getNextVersionFromSC(this.workspace.getRemote()))
                 .orElseGet(() -> {
                     LOG.warn("Application version couldn't be found in the workspace for the build '" + environment.get("JOB_NAME") +
                             "' #" + environment.get("BUILD_NUMBER"));
@@ -275,14 +275,14 @@ public class PublishAppBuilder extends ProgressBuilder {
         }
     }
 
-    private String getNextVersionFromSC(String workspace) {
-        if(StringUtils.isBlank(workspace)) {
+    private String getNextVersionFromSC(String workspacePath) {
+        if(StringUtils.isBlank(workspacePath)) {
             return null;
         }
         if(this.applicationVersion == null) {
             Guice.createInjector(new ServiceNowModule()).injectMembers(this);
         }
-        final String currentVersion = this.applicationVersion.getVersion(workspace, this.appSysId, this.appScope);
+        final String currentVersion = this.applicationVersion.getVersion(workspacePath, this.appSysId, this.appScope);
         return getNextAppVersion(currentVersion);
     }
 

@@ -40,6 +40,8 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
 
     private JSONObject globalSNParams;
 
+    protected FilePath workspace;
+
     private RunFactory clientFactory;
     /**
      * Rest client initialized every time a build is performed and used by subclasses of the builder.
@@ -105,6 +107,8 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
             @Nonnull TaskListener taskListener) throws InterruptedException, IOException {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
+
+        this.workspace = filePath;
 
         setupBuilderParameters(run.getEnvironment(taskListener));
 
