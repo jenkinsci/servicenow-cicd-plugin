@@ -225,7 +225,11 @@ public class ServiceNowAPIClient {
             endpoint += "/" + systemId + "?sysparm_fields=version";
             final Result result = sendRequest(endpoint, null);
             if(result != null && result.getUnboundAttributes().containsKey("version")) {
-                return (String) result.getUnboundAttributes().getOrDefault("version", StringUtils.EMPTY);
+                String appVersion = (String) result.getUnboundAttributes().getOrDefault("version", StringUtils.EMPTY);
+                if("none".equals(appVersion)) {
+                    throw new ServiceNowApiException("Wrong version of customized application!", "The version points that the customization of the application was never installed. Please install it first!");
+                }
+                return appVersion;
             }
         } else if(StringUtils.isNotBlank(applicationScope)) {
             endpoint += "?sysparm_fields=scope,version";
