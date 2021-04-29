@@ -5,6 +5,9 @@
     <f:entry title="${%Version}" field="appVersion">
         <f:textbox id="${builderId}-appVersion"/>
     </f:entry>
+    <f:entry title="${%IsAppCustomization}" field="isAppCustomization">
+        <f:checkbox/>
+    </f:entry>
     <f:entry title="${%GetVersionAutomatically}" field="obtainVersionAutomatically">
         <f:checkbox id="${builderId}-autoVersion"/>
                 <!--onclick="javascript: section = document.getElementById('${builderId}-incrementBy').parentElement.parentElement; if(this.checked) section.style.display = ''; else section.style.display = 'none';"-->

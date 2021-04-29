@@ -4,8 +4,6 @@ import com.google.inject.Guice;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.model.*;
-import hudson.tasks.BuildStepDescriptor;
-import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 import io.jenkins.plugins.servicenow.api.ActionStatus;
 import io.jenkins.plugins.servicenow.api.ServiceNowApiException;
@@ -23,6 +21,7 @@ import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -43,6 +42,7 @@ public class PublishAppBuilder extends ProgressBuilder {
     private String devNotes;
     private Boolean obtainVersionAutomatically = false;
     private Integer incrementBy;
+    private Boolean isAppCustomization;
 
     private String calculatedAppVersion;
 
@@ -107,6 +107,15 @@ public class PublishAppBuilder extends ProgressBuilder {
         this.incrementBy = incrementBy;
     }
 
+    public Boolean getIsAppCustomization() {
+        return isAppCustomization;
+    }
+
+    @DataBoundSetter
+    public void setIsAppCustomization(Boolean appCustomization) {
+        isAppCustomization = appCustomization;
+    }
+
     @Inject
     public void setApplicationVersion(ApplicationVersion applicationVersion) {
         this.applicationVersion = applicationVersion;
@@ -118,10 +127,17 @@ public class PublishAppBuilder extends ProgressBuilder {
 
         taskListener.getLogger().println("\nSTART: ServiceNow - Publish the specified application");
 
+        if(!validatePrerequisite(taskListener.getLogger())) {
+            return false;
+        }
+
+        calculateNextAppVersion(run, taskListener);
+        if(StringUtils.isBlank(this.calculatedAppVersion)) {
+            return false;
+        }
+
         Result serviceNowResult = null;
         try {
-            calculateNextAppVersion(run.getEnvironment(taskListener));
-            taskListener.getLogger().println("> new published application version: " + this.calculatedAppVersion);
             serviceNowResult = getRestClient().publishApp(this.getAppScope(), this.getAppSysId(), this.calculatedAppVersion, this.getDevNotes());
         } catch(ServiceNowApiException ex) {
             taskListener.getLogger().format("Error occurred when API with the action 'publish application' was called: '%s' [details: '%s'].%n", ex.getMessage(), ex.getDetail());
@@ -203,34 +219,63 @@ public class PublishAppBuilder extends ProgressBuilder {
         }
     }
 
-    private void calculateNextAppVersion(EnvVars environment) {
-        if(StringUtils.isBlank(this.appVersion)) {
-            if(StringUtils.isBlank(this.calculatedAppVersion)) {
-                this.calculatedAppVersion = "1.0." + environment.get("BUILD_NUMBER");
-            }
-        } else if(this.appVersion.split("\\.").length == 2) {
-            this.calculatedAppVersion = this.appVersion + "." + environment.get("BUILD_NUMBER");
-        } else {
-            this.calculatedAppVersion = this.appVersion;
+    private boolean validatePrerequisite(PrintStream logger) {
+        if(Boolean.TRUE.equals(this.isAppCustomization) && StringUtils.isBlank(this.appSysId)) {
+            logger.println("Application system id is required if app customization is checked! Build fails!");
+            return false;
         }
+        return true;
+    }
+
+    private void calculateNextAppVersion(Run<?, ?> run, TaskListener taskListener) {
+        try {
+            calculateNextAppVersion(run.getEnvironment(taskListener));
+            taskListener.getLogger().println("> new published application version: " + this.calculatedAppVersion);
+        } catch(ServiceNowApiException ex) {
+            taskListener.getLogger().format("It was not possible to retrieve application version from NOW API: '%s' [details: '%s'].%n", ex.getMessage(), ex.getDetail());
+        } catch(Exception ex) {
+            taskListener.getLogger().println(ex);
+        }
+    }
+
+    private void calculateNextAppVersion(EnvVars environment) {
+        createInitialAppVersion(environment.get("BUILD_NUMBER"));
+
         if(Boolean.TRUE.equals(this.obtainVersionAutomatically)) {
             final String newPublishedVersion = getNextVersionFromAPI();
+
             if(StringUtils.isBlank(newPublishedVersion)) {
                 LOG.warn("Application version couldn't be retrieved from API for the build '" + environment.get("JOB_NAME") +
                         "' #" + environment.get("BUILD_NUMBER"));
-                this.calculatedAppVersion = Optional.ofNullable(getNextVersionFromSc(environment.get("WORKSPACE")))
-                        .orElseGet(() -> {
-                            LOG.warn("Application version couldn't be found in the workspace for the build '" + environment.get("JOB_NAME") +
-                                    "' #" + environment.get("BUILD_NUMBER"));
-                            return this.calculatedAppVersion;
-                        });
+                setNextPublishedVersionFromSC(environment);
             } else {
                 this.calculatedAppVersion = newPublishedVersion;
             }
         }
     }
 
-    private String getNextVersionFromSc(String workspace) {
+    private void setNextPublishedVersionFromSC(EnvVars environment) {
+        this.calculatedAppVersion = Optional.ofNullable(getNextVersionFromSC(environment.get("WORKSPACE")))
+                .orElseGet(() -> {
+                    LOG.warn("Application version couldn't be found in the workspace for the build '" + environment.get("JOB_NAME") +
+                            "' #" + environment.get("BUILD_NUMBER"));
+                    return this.calculatedAppVersion;
+                });
+    }
+
+    private void createInitialAppVersion(String buildNumber) {
+        if(StringUtils.isBlank(this.appVersion)) {
+            if(StringUtils.isBlank(this.calculatedAppVersion)) {
+                this.calculatedAppVersion = "1.0." + buildNumber;
+            }
+        } else if(this.appVersion.split("\\.").length == 2) {
+            this.calculatedAppVersion = this.appVersion + "." + buildNumber;
+        } else {
+            this.calculatedAppVersion = this.appVersion;
+        }
+    }
+
+    private String getNextVersionFromSC(String workspace) {
         if(StringUtils.isBlank(workspace)) {
             return null;
         }
@@ -243,7 +288,10 @@ public class PublishAppBuilder extends ProgressBuilder {
 
     private String getNextVersionFromAPI() {
         if(getRestClient() != null) {
-            String currentVersion = getRestClient().getCurrentAppCustomizationVersion(this.getAppScope(), this.getAppSysId());
+            String currentVersion = null;
+            if(this.isAppCustomization) {
+                currentVersion = getRestClient().getCurrentAppCustomizationVersion(this.getAppScope(), this.getAppSysId());
+            }
 
             if(StringUtils.isBlank(currentVersion)) {
                 currentVersion = getRestClient().getCurrentAppVersion(this.getAppScope(), this.getAppSysId());
@@ -316,6 +364,20 @@ public class PublishAppBuilder extends ProgressBuilder {
         public FormValidation doCheckObtainVersionAutomatically(@QueryParameter Boolean value, @QueryParameter("appVersion") String appVersion) {
             if(value && StringUtils.isNotBlank(appVersion)) {
                 return FormValidation.warning(Messages.PublishAppBuilder_DescriptorImpl_warnings_obtainVersionAutomatically());
+            }
+            return FormValidation.ok();
+        }
+
+        public FormValidation doCheckIsAppCustomization(@QueryParameter Boolean value, @QueryParameter("appSysId") String appSysId) {
+            if(Boolean.TRUE.equals(value) && StringUtils.isBlank(appSysId)) {
+                return FormValidation.error(Messages.PublishAppBuilder_DescriptorImpl_error_isAppCustom_mustHaveSysId());
+            }
+            return FormValidation.ok();
+        }
+
+        public FormValidation doCheckAppSysId(@QueryParameter String value, @QueryParameter("isAppCustomization") Boolean isAppCustomization) {
+            if(Boolean.TRUE.equals(isAppCustomization) && StringUtils.isBlank(value)) {
+                return FormValidation.error(Messages.PublishAppBuilder_DescriptorImpl_error_isAppCustom_mustHaveSysId());
             }
             return FormValidation.ok();
         }
