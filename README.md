@@ -263,13 +263,14 @@ __Url__ and __Credentials for installation instance__ are used only by [SN: Inst
 
 <br/>
 One thing is worth to mention. There are some dependencies between following 2 sets of build steps:
-* application scope:
- + [SN: Publish application](#sn-publish-application)
- + [SN: Install application](#sn-install-application)
- + [SN: Roll back application](#sn-roll-back-application)
-* batch scope:
- + [SN: Batch Install](#sn-batch-install)
- + [SN: Batch Rollback](#sn-batch-rollback)
+
+  * application scope:
+    + [SN: Publish application](#sn-publish-application)
+    + [SN: Install application](#sn-install-application)
+    + [SN: Roll back application](#sn-roll-back-application)
+  * batch scope:
+    + [SN: Batch Install](#sn-batch-install)
+    + [SN: Batch Rollback](#sn-batch-rollback)
 
 In short using an example: when an application is published, and the new version is calculated automatically (__Calculate next application version__
 is checked in the publishing step), the published version of the application must be stored for the installation step.
