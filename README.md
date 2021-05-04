@@ -100,6 +100,9 @@ Publishes the specified application and all of its artifacts to the application 
 ------| ------------
 __Application version__ | Version under which to store the application. Provide 2 significant numbers separated by '.' eg. 1.0 (the third number will be automatically added with build number, what gives eg. 1.0.106).<br/>If the version number is passed, the publish process uses that version and updates the local application version if different. If the version number is not passed, the publish process uses the current version of the local application.
 __Calculate&nbsp;next&nbsp;application&nbsp;version__ | Calculate next application version that will be published. Retrieve it in smart way using API or source control (if SCM is configured for the build). API has the highest priority, then SCM will be used.<br/>__*The value from 'Application version' will be ignored.*__
+__The application is customized__ | The option should be checked if user works with application customization. Application system id is required in this case.
+__Configure auto-increment settings...__ | Application version can be incremented automatically during publishing using `increment by` factor.
+__Increment version by__ | Defines how the application version should be incremented (by what constant integer) in publishing step. 0 means do not increment automatically.
 __Url__ | ServiceNow instance url, where an application will be published
 __Credentials__ | User name and password defined in global credentials and configured in Jenkins (credentials ID is required here)
 __API version__ | Optional. Version of the endpoint to access. For example, v1 or v2. Only specify this value to use an endpoint version other than the latest.
@@ -121,6 +124,8 @@ __Credentials__ | User name and password defined in global credentials and confi
 __API version__ | Optional. Version of the endpoint to access. For example, v1 or v2. Only specify this value to use an endpoint version other than the latest.
 __Application scope__ | Required if *Application system id* is not specified. The scope name of the application for which to apply the changes, such as `x_aah_custom_app`. You can locate this value in the scope field in the Custom Application [sys_app] table.
 __Application&nbsp;system&nbsp;id__ | Required if `Application scope` is not specified. The system id of the application for which to apply the changes. You can locate this value in the Sys ID field in the Custom Application [sys_app] table.
+__Upgrade base application__ | Only applicable if Application Customization is active and the associated application is a higher version than the currently installed version. Flag that indicates whether the associated base application should be automatically upgraded to a newer version.
+__Version of base application__ | Only applicable if Application Customization is active. Version of the base application on which to apply the customizations.
 
 </div>
 
@@ -169,6 +174,58 @@ Rolls back the specified plugin to the previous installed version. If no prior v
 ![Roll back plugin](doc/rollback-plugin.png)
 
 Description of the fields is exactly the same as in the section [SN: Activate plugin](#sn-activate-plugin)
+
+#### SN: Batch Install
+Installs two or more packages in a single specified batch.
+
+For more info please visit following [link](https://developer.servicenow.com/dev.do#!/reference/api/quebec/rest/cicd-api#cicd-POST-app-batch-install?navFilter=cicd).
+
+![Batch install](doc/batch-install.png)
+
+&nbsp; | Description
+------| ------------
+__Url__ | Url of the instance where the batch should be executed. The field cannot be empty.
+__Credentials__ | The field cannot be empty. Credentials set up in Jenkins configuration.
+__Use manifest file__ | Specifies whether external manifest file should be used or the batch data will be provided here by UI fields.
+__Use manifest file__ | Manifest file where request payload (to CICD API) with all packages to install is specified in json format. One example can be found here: [now_batch_manifest.json](docs/now_batch_manifest.json). Active when checkbox 'Manifest file' is selected.
+__Batch name__ | Name of the batch. Not necessary if manifest file is used.
+__Packages__ | All packages to be installed, according to the specification given in the documentation of CICD API. Not necessary if manifest file is used.
+__Notes__ | User specified additional notes. Not necessary if manifest file is used.
+
+#### SN: Batch Rollback
+Rolls back all of the packages associated with a specific batch installation to their previous versions.
+This build step works in conjunction with the [SN: Batch Install](#sn-batch-install). The rollback id is provided in
+the return results of this build step (in console and stored in [ServiceNow Parameters](#global-build-parameters)).
+When this build step is called, it rolls back all packages specified in the associated install; you cannot rollback individual packages. If there is no previous version, the endpoint uninstalls the associated package.
+
+![Batch rollback](doc/batch-rollback.png)
+
+&nbsp; | Description
+------| ------------
+__Batch rollback id__ | Sys_id of the batch installation plan for which to rollback the installed packages to their previous versions. Batch Install step returns this unique id and stores it in ServiceNow Parameters.
+&nbsp; | *Other parameters like described above.*
+
+#### SN: Instance Scan
+Scan ServiceNow instance choosing between 5 different scan types. The build step checks health of the instance.\
+There are following scan types:\
+* full scan (full health check)
+* point scan (health check of a table '*Target table*' and a record in the table '*Target record*')
+* scan with combo (health check where combo sys id is required)
+* scan with suite on scoped apps (health check of scoped apps given in *Request body* in json format)
+* scan with suite on update sets (health check of update set given in *Request body* in json format)
+
+![Instance scan](doc/instance-scan.png)
+
+&nbsp; | Description
+------| ------------
+__Scan type__ | Type of the scan.
+__Target table__ | Target table name when '*point scan*' was chosen.
+__Target record__ | Target record sys id when '*point scan*' was chosen.
+__Combo system id__ | Combo sys id when '*scan with combo*' was chosen.
+__Suite system id__ | Suite sys id when '*scan with suite on scoped apps / update sets*' was chosen.
+__request body__ | Additional data used by '*scan with suite on scoped apps / update sets*'.
+&nbsp; | *Other parameters like described above.*
+
 
 ### Global build parameters
 Together with the plugin comes additional parameter __ServiceNow Parameters__ under the checkbox *This project is parameterized* in *General* section of the build configuration.
@@ -226,17 +283,21 @@ There is also possibility to write pipeline scripts using integrated build steps
 You can find keywords of all steps described above, together with configuration parameters.
 All names should be self-explanatory.<br/>
 There is also *Pipeline Syntax* in Jenkins with __Snippet Generator__ to make easy translation
-from UI configuration into scripting language.
+from UI configuration into scripting language.<br/>
+All parameters are of type `string`, unless otherwise stated.
 
 Build step | Parameters
 ---------- | ----------
-`snApplyChanges` | <ul><li>`apiVersion`</li><li>`appScope`</li><li>`appSysId`</li><li>`branchName`</li><li>`credentialsId`</li><li>`url`</li></ul>
-`snPublishApp` | <ul><li>`apiVersion`</li><li>`appScope`</li><li>`appSysId`</li><li>`appVersion`</li><li>`credentialsId`</li><li>`devNotes`</li><li>`obtainVersionAutomatically`</li><li>`url`</li></ul>
-`snInstallApp` | <ul><li>`apiVersion`</li><li>`appScope`</li><li>`appSysId`</li><li>`appVersion`</li><li>`credentialsId`</li><li>`url`</li></ul>
-`snRollbackApp` | <ul><li>`apiVersion`</li><li>`appScope`</li><li>`appSysId`</li><li>`credentialsId`</li><li>`rollbackAppVersion`</li><li>`url`</li></ul>
-`snRunTestSuite` | <ul><li>`apiVersion`</li><li>`browserName`</li><li>`browserVersion`</li><li>`credentialsId`</li><li>`osName`</li><li>`osVersion`</li><li>`testSuiteName`</li><li>`testSuiteSysId`</li><li>`url`</li><li>`withResults`</li></ul>
-`snActivatePlugin` | <ul><li>`apiVersion`</li><li>`credentialsId`</li><li>`pluginId`</li><li>`url`</li></ul>
-`snRollbackPlugin` | <ul><li>`apiVersion`</li><li>`credentialsId`</li><li>`pluginId`</li><li>`url`</li></ul>
+`snApplyChanges` | <ul><li>`url`</li><li>`apiVersion`</li><li>`credentialsId`</li><li>`appScope`</li><li>`appSysId`</li><li>`branchName`</li></ul>
+`snPublishApp` | <ul><li>`url`</li><li>`apiVersion`</li><li>`credentialsId`</li><li>`appScope`</li><li>`appSysId`</li><li>`appVersion`</li><li>`devNotes`</li><li>`obtainVersionAutomatically` (boolean)</li><li>`incrementBy` (integer)</li><li>`isAppCustomization` (boolean)</li></ul>
+`snInstallApp` | <ul><li>`url`</li><li>`apiVersion`</li><li>`credentialsId`</li><li>`appScope`</li><li>`appSysId`</li><li>`appVersion`</li><li>`baseAppAutoUpgrade` (boolean)</li><li>`baseAppVersion`</li></ul>
+`snRollbackApp` | <ul><li>`url`</li><li>`apiVersion`</li><li>`credentialsId`</li><li>`appScope`</li><li>`appSysId`</li><li>`rollbackAppVersion`</li></ul>
+`snRunTestSuite` | <ul><li>`url`</li><li>`apiVersion`</li><li>`credentialsId`</li><li>`browserName`</li><li>`browserVersion`</li><li>`osName`</li><li>`osVersion`</li><li>`testSuiteName`</li><li>`testSuiteSysId`</li><li>`withResults` (boolean)</li></ul>
+`snActivatePlugin` | <ul><li>`url`</li><li>`apiVersion`</li><li>`credentialsId`</li><li>`pluginId`</li></ul>
+`snRollbackPlugin` | <ul><li>`url`</li><li>`apiVersion`</li><li>`credentialsId`</li><li>`pluginId`</li></ul>
+`snBatchInstall` | <ul><li>`url`</li><li>`apiVersion`</li><li>`credentialsId`</li><li>`useFile` (boolean)</li><li>`file` </li><li>`batchName`</li><li>`packages`</li><li>`notes`</li></ul>
+`snBatchRollback` | <ul><li>`url`</li><li>`apiVersion`</li><li>`credentialsId`</li><li>`rollbackId`</li></ul>
+`snInstanceScan` | <ul><li>`url`</li><li>`apiVersion`</li><li>`credentialsId`</li><li>`scanType` (enum: </li>fullScan, pointScan, scanWithCombo, scanWithSuiteOnScopedApps,scanWithSuiteOnUpdateSets<li>`targetTable`</li><li>`targetRecordSysId`</li><li>`comboSysId`</li><li>`suiteSysId`</li><li>`requestBody`</li></ul>
 
 #### ServiceNow Parameters
 ServiceNow Parameters can be also used in a pipeline scripting. They should be defined within `parameters` section and the parameter named as `snParam`.
