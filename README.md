@@ -66,6 +66,9 @@ The extension's Azure Pipelines Tasks are wrappers for the CI/CD APIs released a
     + [SN: Run test suite with results](#sn-run-test-suite-with-results)
     + [SN: Activate plugin](#sn-activate-plugin)
     + [SN: Roll back plugin](#sn-roll-back-plugin)
+    + [SN: Batch Install](#sn-batch-install)
+    + [SN: Batch Rollback](#sn-batch-rollback)
+    + [SN: Instance Scan](#sn-instance-scan)
   * [Global build parameters](#global-build-parameters)
     + [How to use](#how-to-use)
   * [Scripting](#scripting)
@@ -207,7 +210,7 @@ __Batch rollback id__ | Sys_id of the batch installation plan for which to rollb
 
 #### SN: Instance Scan
 Scan ServiceNow instance choosing between 5 different scan types. The build step checks health of the instance.\
-There are following scan types:\
+There are following scan types:
 * full scan (full health check)
 * point scan (health check of a table '*Target table*' and a record in the table '*Target record*')
 * scan with combo (health check where combo sys id is required)
@@ -259,23 +262,27 @@ __Url__ and __Credentials for publishing instance__ are used only by [SN: Apply 
 __Url__ and __Credentials for installation instance__ are used only by [SN: Install application](#sn-install-application), [SN: Roll back application](#sn-roll-back-application) and [SN: Run test suite with results](#sn-run-test-suite-with-results), if they do not have specified local adequate parameters.
 
 <br/>
-One thing is worth to mention. There are some dependencies between following 3 build steps:
+One thing is worth to mention. There are some dependencies between following 2 sets of build steps:
+* application scope:
+ + [SN: Publish application](#sn-publish-application)
+ + [SN: Install application](#sn-install-application)
+ + [SN: Roll back application](#sn-roll-back-application)
+* batch scope:
+ + [SN: Batch Install](#sn-batch-install)
+ + [SN: Batch Rollback](#sn-batch-rollback)
 
-- [SN: Publish application](#sn-publish-application)
-- [SN: Install application](#sn-install-application)
-- [SN: Roll back application](#sn-roll-back-application)
-
-When an application is published, and the new version is calculated automatically (__Calculate next application version__
+In short using an example: when an application is published, and the new version is calculated automatically (__Calculate next application version__
 is checked in the publishing step), the published version of the application must be stored for the installation step.
 This stored variable will be used as information what version of the application should be installed. The field from *ServiceNow Parameters*
 \- __Published application version__ - is used for this purpose. It means, that in most cases the field will be empty and not used by a user.
-However, the field can be used if we want to specify what exactly version should be used for publishing and/or installation (we do not have to
+However, the field can be used if we would like to specify what exactly version should be used for publishing and/or installation (we do not have to
 combine these 2 steps together, they can be used separately in a build configuration).
 <br/>
 Similar case concerns also steps regarding installation and rolling back of the application. When an application is installed, the installation step
 receives also information about previously installed version, so the *Roll back application* step can downgrade successfully the application if needed.
 That information is stored in the field __Rolled back application version__ and can be used with provided value as described in previous case, if the user knows exactly
-what version should be there.
+what version should be there.\
+The behavior is similar to steps in batch scope, except the variable that is not exposed to the user.
 
 ### Scripting
 #### Build steps
@@ -301,6 +308,9 @@ Build step | Parameters
 
 #### ServiceNow Parameters
 ServiceNow Parameters can be also used in a pipeline scripting. They should be defined within `parameters` section and the parameter named as `snParam`.
+In this case first build always fails because with the first build ServiceNow Parameters are created.\
+Good practice is to create parameterized build with defined ServiceNow Parameters. The definition of these parameters
+can be kept in *Jenkinsfile* if we want to store history of changes in this area.
 Some examples of defined SN Parameters can be found in the paragraph [Samples](#samples).<br/>
 The parameter includes following arguments (names should be self-explanatory):
  * `credentialsForPublishedApp`
@@ -349,7 +359,7 @@ pipeline {
     stages {
         stage('preparation') {
             steps {
-                echo "${params.snParam}"
+                echo "${params.snParam}" // for debugging
 
                 snApplyChanges()
             }
@@ -359,35 +369,49 @@ pipeline {
 ```
 Link to the [example](examples/pipeline-script-2.groovy).
 
-3. Advanced pipeline script with workflow of publishing and installing an application on NOW platform.
-The build was devided into 2 stages: `publishing` and `installation`. The last stage runs additionally 
-test suite to check newly installed application.
+3. Advanced pipeline script with simple but complete CI/CD process of publishing and installing an application with customization on NOW platform.
+The build was divided into 3 stages: `Build`, `Install` and `Deployment`. The last stage can be performed under certain condition.\
+   In this case the build must be parameterized in order to configure ServiceNow Parameters (as explained in the section [How to use](#how-to-use)).
 ```groovy
 pipeline {
     agent any
-
-    parameters {
-            snParam(credentialsForPublishedApp: "88dbbe69-0e00-4dd5-838b-2fbd8dfedeb4", instanceForPublishedAppUrl: "https://cicdjenkinsapppublish.service-now.com",
-                    credentialsForInstalledApp:"88dbbe69-0e00-4dd5-838b-2fbd8dfedeb4", instanceForInstalledAppUrl:"https://cicdjenkinsappinstall.service-now.com",
-                    appScope: "x_sofse_cicdjenkins")
+    environment {
+        BRANCH = "${BRANCH_NAME}"
+        APPSYSID = '00f35c601b2b9410fe0165f8bc4bcb06'
+        CREDENTIALS = '7b4ca59e-8486-486c-895e-f044a5297447'
+        DEVENV = 'https://devinstance.service-now.com/'
+        TESTENV = 'https://testinstance.service-now.com/'
+        PRODENV = 'https://prodinstance.service-now.com/'
+        TESTSUITEID = 'b1ae55eedb541410874fccd8139619fb'
     }
-
     stages {
-        stage('publishing') {
+        stage('Build') {
             steps {
-                snPublishApp obtainVersionAutomatically: true
+                snApplyChanges(appSysId: "${APPSYSID}", branchName: "${BRANCH}", url: "${DEVENV}", credentialsId: "${CREDENTIALS}")
+                snPublishApp(credentialsId: "${CREDENTIALS}", url: "${DEVENV}", appSysId: "${APPSYSID}",
+                        isAppCustomization: true, obtainVersionAutomatically: true, incrementBy: 2)
             }
         }
-        stage('installation') {
+        stage('Install') {
             steps {
-                snInstallApp()
-                snRunTestSuite browserName: 'Firefox', osName: 'Windows', osVersion: '10', testSuiteName: 'My CHG:Change Management', withResults: true
+                snInstallApp(credentialsId: "${CREDENTIALS}", url: "${TESTENV}", appSysId: "${APPSYSID}", baseAppAutoUpgrade: false)
+                snRunTestSuite(credentialsId: "${CREDENTIALS}", url: "${TESTENV}", testSuiteSysId: "${TESTSUITEID}", withResults: true)
+            }
+        }
+        stage('Deploy to Prod') {
+            when {
+                branch 'master'
+            }
+            steps {
+                snInstallApp(credentialsId: "${CREDENTIALS}", url: "${PRODENV}", appSysId: "${APPSYSID}", baseAppAutoUpgrade: false)
             }
         }
     }
 }
 ```
-Link to the [example](examples/pipeline-script-3.groovy).
+Link to the [example](examples/install-app-customization).
+
+More examples can be found in the folder *examples*.
 
 ## Integration Tests
 Integration tests using the CI/CD APIs are located in two classes: `ServiceNowAPIClientIntegrationTest` and `SNStepsIntegrationTest`.

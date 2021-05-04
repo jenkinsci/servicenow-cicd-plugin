@@ -1,0 +1,27 @@
+// Sample script for batch install build step using manifest file with default name: now_batch_manifest.json
+// For more details visit: https://developer.servicenow.com/dev.do#!/reference/api/quebec/rest/cicd-api#cicd-POST-app-batch-install
+// ServiceNow API: POST /sn_cicd/app/batch/install
+
+pipeline {
+  agent any
+
+  environment {
+    CREDENTIALS = '7b4ca59e-8486-486c-895e-f044a5297447'
+    PRODENV = 'https://prodinstance.service-now.com'
+  }
+
+  stages {
+    stage('release') {
+      steps {
+        snBatchInstall(
+          url: "${PRODENV}"
+          ,credentialsId: "${CREDENTIALS}"
+          ,useFile: true
+//        ,file: "now_batch_manifest.json" // default file name placed in workspace (eg. with checkout action),
+                                           // required if there is a file with different name
+                                           // or in different localization than default one
+          )
+      }
+    }
+  }
+}
