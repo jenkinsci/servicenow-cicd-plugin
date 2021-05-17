@@ -25,4 +25,8 @@ public class LinkObject extends JsonResponseObject {
     public void setUrl(String url) {
         this.url = url;
     }
+
+    public String toString() {
+        return "'id': " + id + ", 'url': " + url;
+    }
 }

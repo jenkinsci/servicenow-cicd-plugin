@@ -8,6 +8,8 @@ public interface RequestParameters {
     String SYSTEM_ID = "sys_id";
     String APP_SYSTEM_ID = "app_sys_id";
     String BRANCH_NAME = "branch_name";
+    String APP_AUTO_UPGRADE_BASE = "auto_upgrade_base_app";
+    String APP_BASE_VERSION = "base_app_version";
 
     String TEST_SUITE_NAME = "test_suite_name";
     String TEST_SUITE_SYS_ID = "test_suite_sys_id";
@@ -18,4 +20,8 @@ public interface RequestParameters {
 
     String APP_VERSION = "version";
     String DEV_NOTES = "dev_notes";
+
+    // instance scan parameters
+    String TARGET_TABLE = "target_table";
+    String TARGET_SYS_ID = "target_sys_id";
 }

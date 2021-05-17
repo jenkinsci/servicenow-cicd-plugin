@@ -2,9 +2,10 @@ package io.jenkins.plugins.servicenow.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hudson.util.Secret;
-import io.jenkins.plugins.servicenow.api.model.*;
 import io.jenkins.plugins.servicenow.api.model.Error;
-import org.apache.commons.collections.CollectionUtils;
+import io.jenkins.plugins.servicenow.api.model.Response;
+import io.jenkins.plugins.servicenow.api.model.Result;
+import io.jenkins.plugins.servicenow.api.model.TableResponse;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -28,6 +29,7 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -45,6 +47,8 @@ public class ServiceNowAPIClient {
     private String getTableApiUrl() {
         return removeTrailingSlash(this.apiUrl) + "/api/now/table/";
     }
+
+    private static final String BATCH_INSTALL_ENDPOINT = "app/batch/install";
 
     private final String apiUrl;
     private final String username;
@@ -153,7 +157,17 @@ public class ServiceNowAPIClient {
         return sendRequest(endpoint, params, null);
     }
 
-    public Result installApp(final String applicationScope, final String applicationSysId, final String applicationVersion) throws IOException, URISyntaxException {
+    public Result installApp(final String applicationScope,
+            final String applicationSysId,
+            final String applicationVersion) throws IOException, URISyntaxException {
+        return this.installApp(applicationScope, applicationSysId, applicationVersion, null, null);
+    }
+
+    public Result installApp(final String applicationScope,
+            final String applicationSysId,
+            final String applicationVersion,
+            final String baseAppVersion,
+            final Boolean autoUpgradeBaseApp) throws IOException, URISyntaxException {
         final String endpoint = "app_repo/install";
         LOG.debug("ServiceNow API call > installApp");
 
@@ -161,6 +175,12 @@ public class ServiceNowAPIClient {
         addParameter(params, RequestParameters.SCOPE, applicationScope);
         addParameter(params, RequestParameters.SYSTEM_ID, applicationSysId);
         addParameter(params, RequestParameters.APP_VERSION, applicationVersion);
+        if(StringUtils.isNotBlank(baseAppVersion)) {
+            addParameter(params, RequestParameters.APP_BASE_VERSION, baseAppVersion);
+        }
+        if(autoUpgradeBaseApp != null) {
+            addParameter(params, RequestParameters.APP_AUTO_UPGRADE_BASE, autoUpgradeBaseApp.toString());
+        }
 
         return sendRequest(endpoint, params, null);
     }
@@ -192,12 +212,24 @@ public class ServiceNowAPIClient {
     }
 
     public String getCurrentAppVersion(final String applicationScope, final String systemId) {
-        String endpoint = getTableApiUrl() + "sys_app";
+        return getAppVersion(false, applicationScope, systemId);
+    }
+
+    public String getCurrentAppCustomizationVersion(final String applicationScope, final String systemId) {
+        return getAppVersion(true, applicationScope, systemId);
+    }
+
+    private String getAppVersion(boolean customized, final String applicationScope, final String systemId) {
+        String endpoint = getTableApiUrl() + (customized ? "sys_app_customization" : "sys_app");
         if(StringUtils.isNotBlank(systemId)) {
             endpoint += "/" + systemId + "?sysparm_fields=version";
             final Result result = sendRequest(endpoint, null);
             if(result != null && result.getUnboundAttributes().containsKey("version")) {
-                return (String) result.getUnboundAttributes().getOrDefault("version", StringUtils.EMPTY);
+                String appVersion = (String) result.getUnboundAttributes().getOrDefault("version", StringUtils.EMPTY);
+                if("none".equals(appVersion)) {
+                    throw new ServiceNowApiException("Wrong version of customized application!", "The version points that the customization of the application was never installed. Please install it first!");
+                }
+                return appVersion;
             }
         } else if(StringUtils.isNotBlank(applicationScope)) {
             endpoint += "?sysparm_fields=scope,version";
@@ -218,6 +250,94 @@ public class ServiceNowAPIClient {
         return StringUtils.EMPTY;
     }
 
+    public Result executeFullScan() throws IOException, URISyntaxException {
+        final String endpoint = "instance_scan/full_scan";
+        LOG.debug("ServiceNow API call > execute full scan");
+
+        return sendRequest(endpoint, null, null);
+    }
+
+    /**
+     * Execute Point Scan (with progress flow).
+     * @param targetTable Target table to be scanned.
+     * @param targetSysId Target record to be scanned.
+     * @return Results with a link to follow the progress of the scan.
+     */
+    public Result executePointScan(final String targetTable, final String targetSysId) throws IOException, URISyntaxException {
+        final String endpoint = "instance_scan/point_scan";
+        LOG.debug("ServiceNow API call > execute point scan");
+
+        List<NameValuePair> params = new ArrayList<>();
+        addParameter(params, RequestParameters.TARGET_TABLE, targetTable);
+        addParameter(params, RequestParameters.TARGET_SYS_ID, targetSysId);
+
+        return sendRequest(endpoint, params, null);
+    }
+
+    public Result executeScanWithCombo(final String comboSysId) throws IOException, URISyntaxException {
+        if(StringUtils.isBlank(comboSysId)) {
+            throw new IllegalArgumentException("Scan with combo cannot be executed without the parameter combo_sys_id!");
+        }
+        final String endpoint = "instance_scan/suite_scan/combo/" + comboSysId;
+        LOG.debug("ServiceNow API call > execute scan with combo");
+
+        return sendRequest(endpoint, null, null);
+    }
+
+    public Result executeScanWithSuiteOnScopedApps(final String suiteSysId, final String requestBody) throws IOException, URISyntaxException {
+        if(StringUtils.isBlank(suiteSysId)) {
+            throw new IllegalArgumentException("Scan with suite on scoped apps cannot be executed without the parameter suiteSysId!");
+        }
+        final String endpoint = "instance_scan/suite_scan/" + suiteSysId + "/scoped_apps";
+        LOG.debug("ServiceNow API call > execute scan with suite on scoped apps");
+
+        return sendRequest(endpoint, null, requestBody);
+    }
+
+    public Result executeScanWithSuiteOnUpdateSet(final String suiteSysId, String requestBody) throws IOException, URISyntaxException {
+        if(StringUtils.isBlank(suiteSysId)) {
+            throw new IllegalArgumentException("Scan with suite on scoped apps cannot be executed without the parameter suiteSysId!");
+        }
+        final String endpoint = "instance_scan/suite_scan/" + suiteSysId + "/update_sets";
+        LOG.debug("ServiceNow API call > execute scan with suite on update set");
+
+        return sendRequest(endpoint, null, requestBody);
+    }
+
+    public Result batchInstall(String payload) throws IOException, URISyntaxException {
+        final String endpoint = BATCH_INSTALL_ENDPOINT;
+        LOG.debug("ServiceNow API call > batch install");
+
+        LOG.debug("Batch install payload: " + payload);
+
+        return sendRequest(endpoint, null, payload);
+    }
+
+    public Result batchInstall(final String batchName, final String packages, final String notes) throws IOException, URISyntaxException {
+        final String endpoint = BATCH_INSTALL_ENDPOINT;
+        LOG.debug("ServiceNow API call > batch install");
+
+        String requestBody = "{" +
+                MessageFormat.format(
+                        "\"name\": \"{0}\", \"packages\": {1}, \"notes\": \"{2}\"",
+                        batchName, packages, notes) +
+                "}";
+
+        LOG.debug("Batch install payload: " + requestBody);
+
+        return sendRequest(endpoint, null, requestBody);
+    }
+
+    public Result batchRollback(final String rollbackId) throws IOException, URISyntaxException {
+        if(StringUtils.isBlank(rollbackId)) {
+            throw new IllegalArgumentException("Rollback id must not be empty or blank!");
+        }
+        final String endpoint = "app/batch/rollback/" + rollbackId;
+        LOG.debug("ServiceNow API call > batch rollback [id=" + rollbackId + "]");
+
+        return sendRequest(endpoint, null, null);
+    }
+
     /**
      * Send POST request using following parameters.
      *
@@ -226,7 +346,7 @@ public class ServiceNowAPIClient {
      * @param jsonBody Body of the request (as JSON object)
      * @return Result of the response or null if there was thrown an exception.
      */
-    private Result sendRequest(String endpoint, List<NameValuePair> params, JsonData jsonBody) throws IOException, URISyntaxException {
+    private Result sendRequest(String endpoint, List<NameValuePair> params, String jsonBody) throws IOException, URISyntaxException {
         Response response = this.post(endpoint, params, jsonBody);
 
         return getResult(endpoint, response);
@@ -310,7 +430,7 @@ public class ServiceNowAPIClient {
         return null;
     }
 
-    private Response post(final String endpointPath, final List<NameValuePair> parameters, final JsonData jsonBody) throws URISyntaxException, IOException {
+    private Response post(final String endpointPath, final List<NameValuePair> parameters, final String jsonBody) throws URISyntaxException, IOException {
         this.lastActionProgressUrl = StringUtils.EMPTY;
         try(CloseableHttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(getCredentials()).build()) {
 
@@ -345,7 +465,7 @@ public class ServiceNowAPIClient {
         return result;
     }
 
-    private HttpResponse sendRequest(final CloseableHttpClient client, final HttpRequestBase request, final String endpointPath, final List<NameValuePair> parameters, final JsonData jsonBody) throws URISyntaxException, IOException {
+    private HttpResponse sendRequest(final CloseableHttpClient client, final HttpRequestBase request, final String endpointPath, final List<NameValuePair> parameters, final String jsonBody) throws URISyntaxException, IOException {
         URIBuilder uriBuilder = new URIBuilder(isURL(endpointPath) ? endpointPath : this.getCICDApiUrl() + endpointPath);
         if(parameters != null) {
             uriBuilder.setParameters(parameters);
@@ -357,7 +477,7 @@ public class ServiceNowAPIClient {
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.JSON);
 
         if(jsonBody != null && request instanceof HttpPost) {
-            final HttpEntity requestBody = new StringEntity(new ObjectMapper().writeValueAsString(jsonBody));
+            final HttpEntity requestBody = new StringEntity(jsonBody);
             ((HttpPost) request).setEntity(requestBody);
         }
 

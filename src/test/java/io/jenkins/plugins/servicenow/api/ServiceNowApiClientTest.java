@@ -44,7 +44,7 @@ public class ServiceNowApiClientTest {
     }
 
     @Test
-    public void applyChanges() throws IOException, URISyntaxException {
+    public void testApplyChanges() throws IOException, URISyntaxException {
         // given
         String systemId = "testSystemId";
         mockServer.when(
@@ -88,7 +88,7 @@ public class ServiceNowApiClientTest {
     }
 
     @Test
-    public void applyChanges_notAuthorized() throws IOException {
+    public void testApplyChanges_notAuthorized() throws IOException {
         // given
         String systemId = "testSystemId";
         String errorMessage = "User Not Authenticated";
@@ -125,7 +125,7 @@ public class ServiceNowApiClientTest {
     }
 
     @Test
-    public void applyChanges_invalidAppSysId() throws IOException, URISyntaxException {
+    public void testApplyChanges_invalidAppSysId() throws IOException, URISyntaxException {
         // given
         String systemId = "testSystemId";
         mockServer.when(
@@ -153,7 +153,7 @@ public class ServiceNowApiClientTest {
     }
 
     @Test
-    public void checkProgress() throws IOException, URISyntaxException {
+    public void testCheckProgress() throws IOException, URISyntaxException {
         // given
         String commitId = "1590365066990cfe14b2f974cfd9db33b4c49be6";
         String PROGRESS_ID2 = "5678";
@@ -233,5 +233,393 @@ public class ServiceNowApiClientTest {
         assertThat(progressResult.getError()).isBlank();
         assertThat(progressResult.getPercentComplete()).isEqualTo(100);
         assertThat(serviceNowAPIClient.getLastActionProgressUrl()).endsWith(PROGRESS_ID2);
+    }
+
+    @Test
+    public void testInstallApp() throws IOException, URISyntaxException {
+        // given
+        String systemId = "testSystemId";
+        Boolean baseAppAutoUpgrade = Boolean.TRUE;
+        String baseAppVersion = "1.0.0";
+        mockServer.when(
+                request()
+                        .withMethod("POST")
+                        .withPath("/api/sn_cicd/app_repo/install")
+                        .withQueryStringParameter(RequestParameters.SYSTEM_ID, systemId)
+                        .withQueryStringParameter(RequestParameters.APP_AUTO_UPGRADE_BASE, baseAppAutoUpgrade.toString())
+                        .withQueryStringParameter(RequestParameters.APP_BASE_VERSION, baseAppVersion)
+        )
+                .respond(
+                        response()
+                                .withStatusCode(200)
+                                .withBody("{\n" +
+                                        "    \"result\": {\n" +
+                                        "        \"links\": {\n" +
+                                        "            \"progress\": {\n" +
+                                        "                \"id\": \"" + PROGRESS_ID + "\",\n" +
+                                        "                \"url\": \"http://" + HOST_MOCKED + ":" + PORT + "/api/sn_cicd/progress/" + PROGRESS_ID + "\"\n" +
+                                        "            }\n" +
+                                        "        },\n" +
+                                        "        \"status\": \"0\",\n" +
+                                        "        \"status_label\": \"Pending\",\n" +
+                                        "        \"status_message\": \"\",\n" +
+                                        "        \"status_detail\": \"\",\n" +
+                                        "        \"error\": \"\",\n" +
+                                        "        \"percent_complete\": 0\n" +
+                                        "    }\n" +
+                                        "}")
+                );
+
+        // when
+        Result result = serviceNowAPIClient.installApp(null, systemId, null, baseAppVersion, baseAppAutoUpgrade);
+
+        // then
+        mockServer.verify(
+                request("/api/sn_cicd/app_repo/install"), VerificationTimes.exactly(1)
+        );
+        assertThat(result).isNotNull();
+        assertThat(result.getStatus()).isEqualTo("0");
+        assertThat(result.getLinks().getProgress().getId()).isEqualTo(PROGRESS_ID);
+        assertThat(result.getLinks().getProgress().getUrl()).contains(HOST_MOCKED, Integer.toString(PORT), PROGRESS_ID);
+        assertThat(serviceNowAPIClient.getLastActionProgressUrl()).endsWith(PROGRESS_ID);
+    }
+
+    @Test
+    public void testExecuteFullScan() throws IOException, URISyntaxException {
+        // given
+        mockServer.when(
+                request()
+                        .withMethod("POST")
+                        .withPath("/api/sn_cicd/instance_scan/full_scan")
+        )
+                .respond(
+                        response()
+                                .withStatusCode(200)
+                                .withBody("{\n" +
+                                        "    \"result\": {\n" +
+                                        "        \"links\": {\n" +
+                                        "            \"progress\": {\n" +
+                                        "                \"id\": \"" + PROGRESS_ID + "\",\n" +
+                                        "                \"url\": \"http://" + HOST_MOCKED + ":" + PORT + "/api/sn_cicd/progress/" + PROGRESS_ID + "\"\n" +
+                                        "            }\n" +
+                                        "        },\n" +
+                                        "        \"status\": \"0\",\n" +
+                                        "        \"status_label\": \"Pending\",\n" +
+                                        "        \"status_message\": \"\",\n" +
+                                        "        \"status_detail\": \"\",\n" +
+                                        "        \"error\": \"\",\n" +
+                                        "        \"percent_complete\": 0\n" +
+                                        "    }\n" +
+                                        "}")
+                );
+
+        // when
+        Result result = serviceNowAPIClient.executeFullScan();
+
+        // then
+        mockServer.verify(
+                request("/api/sn_cicd/instance_scan/full_scan"), VerificationTimes.exactly(1)
+        );
+        assertThat(result).isNotNull();
+        assertThat(result.getStatus()).isEqualTo("0");
+        assertThat(result.getLinks().getProgress().getId()).isEqualTo(PROGRESS_ID);
+        assertThat(result.getLinks().getProgress().getUrl()).contains(HOST_MOCKED, Integer.toString(PORT), PROGRESS_ID);
+        assertThat(serviceNowAPIClient.getLastActionProgressUrl()).endsWith(PROGRESS_ID);
+    }
+
+    @Test
+    public void testExecutePointScan() throws IOException, URISyntaxException {
+        // given
+        String parameter1 = "table";
+        String parameter2 = "recordId";
+        mockServer.when(
+                request()
+                        .withMethod("POST")
+                        .withPath("/api/sn_cicd/instance_scan/point_scan")
+                        .withQueryStringParameter(RequestParameters.TARGET_TABLE, parameter1)
+                        .withQueryStringParameter(RequestParameters.TARGET_SYS_ID, parameter2)
+        )
+                .respond(
+                        response()
+                                .withStatusCode(200)
+                                .withBody("{\n" +
+                                        "    \"result\": {\n" +
+                                        "        \"links\": {\n" +
+                                        "            \"progress\": {\n" +
+                                        "                \"id\": \"" + PROGRESS_ID + "\",\n" +
+                                        "                \"url\": \"http://" + HOST_MOCKED + ":" + PORT + "/api/sn_cicd/progress/" + PROGRESS_ID + "\"\n" +
+                                        "            }\n" +
+                                        "        },\n" +
+                                        "        \"status\": \"0\",\n" +
+                                        "        \"status_label\": \"Pending\",\n" +
+                                        "        \"status_message\": \"\",\n" +
+                                        "        \"status_detail\": \"\",\n" +
+                                        "        \"error\": \"\",\n" +
+                                        "        \"percent_complete\": 0\n" +
+                                        "    }\n" +
+                                        "}")
+                );
+
+        // when
+        Result result = serviceNowAPIClient.executePointScan(parameter1, parameter2);
+
+        // then
+        mockServer.verify(
+                request("/api/sn_cicd/instance_scan/point_scan"), VerificationTimes.exactly(1)
+        );
+        assertThat(result).isNotNull();
+        assertThat(result.getStatus()).isEqualTo("0");
+        assertThat(result.getLinks().getProgress().getId()).isEqualTo(PROGRESS_ID);
+        assertThat(result.getLinks().getProgress().getUrl()).contains(HOST_MOCKED, Integer.toString(PORT), PROGRESS_ID);
+        assertThat(serviceNowAPIClient.getLastActionProgressUrl()).endsWith(PROGRESS_ID);
+    }
+
+    @Test
+    public void testExecuteComboScan() throws IOException, URISyntaxException {
+        // given
+        String pathParameter = "combo-id";
+        mockServer.when(
+                request()
+                        .withMethod("POST")
+                        .withPath("/api/sn_cicd/instance_scan/suite_scan/combo/{comboSysId}")
+                        .withPathParameter("comboSysId", pathParameter)
+        )
+                .respond(
+                        response()
+                                .withStatusCode(200)
+                                .withBody("{\n" +
+                                        "    \"result\": {\n" +
+                                        "        \"links\": {\n" +
+                                        "            \"progress\": {\n" +
+                                        "                \"id\": \"" + PROGRESS_ID + "\",\n" +
+                                        "                \"url\": \"http://" + HOST_MOCKED + ":" + PORT + "/api/sn_cicd/progress/" + PROGRESS_ID + "\"\n" +
+                                        "            }\n" +
+                                        "        },\n" +
+                                        "        \"status\": \"0\",\n" +
+                                        "        \"status_label\": \"Pending\",\n" +
+                                        "        \"status_message\": \"\",\n" +
+                                        "        \"status_detail\": \"\",\n" +
+                                        "        \"error\": \"\",\n" +
+                                        "        \"percent_complete\": 0\n" +
+                                        "    }\n" +
+                                        "}")
+                );
+
+        // when
+        Result result = serviceNowAPIClient.executeScanWithCombo(pathParameter);
+
+        // then
+        mockServer.verify(
+                request("/api/sn_cicd/instance_scan/suite_scan/combo/" + pathParameter), VerificationTimes.exactly(1)
+        );
+        assertThat(result).isNotNull();
+        assertThat(result.getStatus()).isEqualTo("0");
+        assertThat(result.getLinks().getProgress().getId()).isEqualTo(PROGRESS_ID);
+        assertThat(result.getLinks().getProgress().getUrl()).contains(HOST_MOCKED, Integer.toString(PORT), PROGRESS_ID);
+        assertThat(serviceNowAPIClient.getLastActionProgressUrl()).endsWith(PROGRESS_ID);
+    }
+
+    @Test
+    public void testExecuteSuiteScanOnScopedApps() throws IOException, URISyntaxException {
+        // given
+        String pathParameter = "suite-id";
+        String requestBody = "{app_scope_sys_ids: ['21423452454fdsf', 'fas543fg34g34y35']}";
+        mockServer.when(
+                request()
+                        .withMethod("POST")
+                        .withPath("/api/sn_cicd/instance_scan/suite_scan/{suiteSysId}/scoped_apps")
+                        .withPathParameter("suiteSysId", pathParameter)
+                        .withBody(requestBody)
+        )
+                .respond(
+                        response()
+                                .withStatusCode(200)
+                                .withBody("{\n" +
+                                        "    \"result\": {\n" +
+                                        "        \"links\": {\n" +
+                                        "            \"progress\": {\n" +
+                                        "                \"id\": \"" + PROGRESS_ID + "\",\n" +
+                                        "                \"url\": \"http://" + HOST_MOCKED + ":" + PORT + "/api/sn_cicd/progress/" + PROGRESS_ID + "\"\n" +
+                                        "            }\n" +
+                                        "        },\n" +
+                                        "        \"status\": \"0\",\n" +
+                                        "        \"status_label\": \"Pending\",\n" +
+                                        "        \"status_message\": \"\",\n" +
+                                        "        \"status_detail\": \"\",\n" +
+                                        "        \"error\": \"\",\n" +
+                                        "        \"percent_complete\": 0\n" +
+                                        "    }\n" +
+                                        "}")
+                );
+
+        // when
+        Result result = serviceNowAPIClient.executeScanWithSuiteOnScopedApps(pathParameter, requestBody);
+
+        // then
+        mockServer.verify(
+                request("/api/sn_cicd/instance_scan/suite_scan/" + pathParameter + "/scoped_apps"), VerificationTimes.exactly(1)
+        );
+        assertThat(result).isNotNull();
+        assertThat(result.getStatus()).isEqualTo("0");
+        assertThat(result.getLinks().getProgress().getId()).isEqualTo(PROGRESS_ID);
+        assertThat(result.getLinks().getProgress().getUrl()).contains(HOST_MOCKED, Integer.toString(PORT), PROGRESS_ID);
+        assertThat(serviceNowAPIClient.getLastActionProgressUrl()).endsWith(PROGRESS_ID);
+    }
+
+    @Test
+    public void testExecuteSuiteScanOnUpdateSets() throws IOException, URISyntaxException {
+        // given
+        String pathParameter = "suite-id";
+        String requestBody = "{app_scope_sys_ids: ['21423452454fdsf', 'fas543fg34g34y35']}";
+        mockServer.when(
+                request()
+                        .withMethod("POST")
+                        .withPath("/api/sn_cicd/instance_scan/suite_scan/{suiteSysId}/update_sets")
+                        .withPathParameter("suiteSysId", pathParameter)
+                        .withBody(requestBody)
+        )
+                .respond(
+                        response()
+                                .withStatusCode(200)
+                                .withBody("{\n" +
+                                        "    \"result\": {\n" +
+                                        "        \"links\": {\n" +
+                                        "            \"progress\": {\n" +
+                                        "                \"id\": \"" + PROGRESS_ID + "\",\n" +
+                                        "                \"url\": \"http://" + HOST_MOCKED + ":" + PORT + "/api/sn_cicd/progress/" + PROGRESS_ID + "\"\n" +
+                                        "            }\n" +
+                                        "        },\n" +
+                                        "        \"status\": \"0\",\n" +
+                                        "        \"status_label\": \"Pending\",\n" +
+                                        "        \"status_message\": \"\",\n" +
+                                        "        \"status_detail\": \"\",\n" +
+                                        "        \"error\": \"\",\n" +
+                                        "        \"percent_complete\": 0\n" +
+                                        "    }\n" +
+                                        "}")
+                );
+
+        // when
+        Result result = serviceNowAPIClient.executeScanWithSuiteOnUpdateSet(pathParameter, requestBody);
+
+        // then
+        mockServer.verify(
+                request("/api/sn_cicd/instance_scan/suite_scan/" + pathParameter + "/update_sets"), VerificationTimes.exactly(1)
+        );
+        assertThat(result).isNotNull();
+        assertThat(result.getStatus()).isEqualTo("0");
+        assertThat(result.getLinks().getProgress().getId()).isEqualTo(PROGRESS_ID);
+        assertThat(result.getLinks().getProgress().getUrl()).contains(HOST_MOCKED, Integer.toString(PORT), PROGRESS_ID);
+        assertThat(serviceNowAPIClient.getLastActionProgressUrl()).endsWith(PROGRESS_ID);
+    }
+
+    @Test
+    public void testBatchInstall() throws IOException, URISyntaxException {
+        // given
+        String name = "Test batch install";
+        String packages = "[{'id': 'qwerty', 'type': 'application', 'requested_version': '1.0.0']";
+        String notes = "Test notes";
+        String requestBody = "{" +
+                "\"name\": \"" + name + "\", " +
+                "\"packages\": " + packages + ", " +
+                "\"notes\": \"" + notes + "\"}";
+        String rollbackId = "abcd1234";
+        String resultId = "4321dcba";
+        mockServer.when(
+                request()
+                        .withMethod("POST")
+                        .withPath("/api/sn_cicd/app/batch/install")
+                        .withBody(requestBody)
+        )
+                .respond(
+                        response()
+                                .withStatusCode(200)
+                                .withBody("{\n" +
+                                        "    \"result\": {\n" +
+                                        "        \"links\": {\n" +
+                                        "            \"progress\": {\n" +
+                                        "                \"id\": \"" + PROGRESS_ID + "\",\n" +
+                                        "                \"url\": \"http://" + HOST_MOCKED + ":" + PORT + "/api/sn_cicd/progress/" + PROGRESS_ID + "\"\n" +
+                                        "            },\n" +
+                                        "            \"results\": {\n" +
+                                        "                \"id\": \"" + resultId + "\",\n" +
+                                        "                \"url\": \"https://" + HOST_MOCKED + ":" + PORT + "/api/sn_cicd/app/batch/results/" + resultId + "\"\n" +
+                                        "            },\n" +
+                                        "            \"rollback\": {\n" +
+                                        "                \"id\": \"" + rollbackId + "\",\n" +
+                                        "                \"url\": \"https://" + HOST_MOCKED + ":" + PORT + "/api/sn_cicd/app/batch/rollback/" + rollbackId + "\"\n" +
+                                        "            }" +
+                                        "        },\n" +
+                                        "        \"status\": \"0\",\n" +
+                                        "        \"status_label\": \"Pending\",\n" +
+                                        "        \"status_message\": \"\",\n" +
+                                        "        \"status_detail\": \"\",\n" +
+                                        "        \"error\": \"\",\n" +
+                                        "        \"percent_complete\": 0\n" +
+                                        "    }\n" +
+                                        "}")
+                );
+
+        // when
+        Result result = serviceNowAPIClient.batchInstall(name, packages, notes);
+
+        // then
+        mockServer.verify(
+                request("/api/sn_cicd/app/batch/install"), VerificationTimes.exactly(1)
+        );
+        assertThat(result).isNotNull();
+        assertThat(result.getStatus()).isEqualTo("0");
+        assertThat(result.getLinks().getProgress().getId()).isEqualTo(PROGRESS_ID);
+        assertThat(result.getLinks().getProgress().getUrl()).contains(HOST_MOCKED, Integer.toString(PORT), PROGRESS_ID);
+        assertThat(result.getLinks().getResults().getId()).isEqualTo(resultId);
+        assertThat(result.getLinks().getResults().getUrl()).contains(HOST_MOCKED, Integer.toString(PORT), resultId);
+        assertThat(result.getLinks().getRollback().getId()).isEqualTo(rollbackId);
+        assertThat(result.getLinks().getRollback().getUrl()).contains(HOST_MOCKED, Integer.toString(PORT), PROGRESS_ID);
+        assertThat(serviceNowAPIClient.getLastActionProgressUrl()).endsWith(PROGRESS_ID);
+    }
+
+    @Test
+    public void testBatchRollback() throws IOException, URISyntaxException {
+        // given
+        String rollbackId = "qwerty1234";
+        mockServer.when(
+                request()
+                        .withMethod("POST")
+                        .withPath("/api/sn_cicd/app/batch/rollback/{rollbackId}")
+                        .withPathParameter("rollbackId", rollbackId)
+        )
+                .respond(
+                        response()
+                                .withStatusCode(200)
+                                .withBody("{\n" +
+                                        "    \"result\": {\n" +
+                                        "        \"links\": {\n" +
+                                        "            \"progress\": {\n" +
+                                        "                \"id\": \"" + PROGRESS_ID + "\",\n" +
+                                        "                \"url\": \"http://" + HOST_MOCKED + ":" + PORT + "/api/sn_cicd/progress/" + PROGRESS_ID + "\"\n" +
+                                        "            }\n" +
+                                        "        },\n" +
+                                        "        \"status\": \"0\",\n" +
+                                        "        \"status_label\": \"Pending\",\n" +
+                                        "        \"status_message\": \"\",\n" +
+                                        "        \"status_detail\": \"\",\n" +
+                                        "        \"error\": \"\",\n" +
+                                        "        \"percent_complete\": 0\n" +
+                                        "    }\n" +
+                                        "}")
+                );
+
+        // when
+        Result result = serviceNowAPIClient.batchRollback(rollbackId);
+
+        // then
+        mockServer.verify(
+                request("/api/sn_cicd/app/batch/rollback/" + rollbackId), VerificationTimes.exactly(1)
+        );
+        assertThat(result).isNotNull();
+        assertThat(result.getStatus()).isEqualTo("0");
+        assertThat(result.getLinks().getProgress().getId()).isEqualTo(PROGRESS_ID);
+        assertThat(result.getLinks().getProgress().getUrl()).contains(HOST_MOCKED, Integer.toString(PORT), PROGRESS_ID);
+        assertThat(serviceNowAPIClient.getLastActionProgressUrl()).endsWith(PROGRESS_ID);
     }
 }

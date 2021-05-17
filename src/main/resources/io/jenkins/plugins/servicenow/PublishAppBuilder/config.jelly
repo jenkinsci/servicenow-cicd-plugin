@@ -1,12 +1,19 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
          xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    <j:set var="builderId" value="${descriptor.generateBuilderId()}"/>
     <f:entry title="${%Version}" field="appVersion">
-        <f:textbox clazz="js-servicenow-appVersion"/>
+        <f:textbox id="${builderId}-appVersion"/>
+    </f:entry>
+    <f:entry title="${%IsAppCustomization}" field="isAppCustomization">
+        <f:checkbox/>
     </f:entry>
     <f:entry title="${%GetVersionAutomatically}" field="obtainVersionAutomatically">
-        <f:checkbox
-                onclick="javascript: if(this.checked) document.querySelector('.js-servicenow-appVersion').disabled='disabled'; else document.querySelector('.js-servicenow-appVersion').disabled=null;"/>
+        <f:checkbox id="${builderId}-autoVersion"/>
+                <!--onclick="javascript: section = document.getElementById('${builderId}-incrementBy').parentElement.parentElement; if(this.checked) section.style.display = ''; else section.style.display = 'none';"-->
+    </f:entry>
+    <f:entry title="${%IncrementBy}" field="incrementBy">
+        <f:number id="${builderId}-incrementBy"/>
     </f:entry>
     <f:advanced>
         <f:entry title="${%Url}" field="url">
@@ -29,4 +36,18 @@
             <f:textbox/>
         </f:entry>
     </f:advanced>
+    <script>
+        setTimeout(function() {
+            let adjustVisibility = () => {
+                let show = document.getElementById("${builderId}-autoVersion").checked;
+                let section = document.getElementById('${builderId}-incrementBy').parentElement.parentElement;
+                if(section) {
+                    if(show) section.style.display = '';
+                    else section.style.display = 'none';
+                };
+            }
+            document.getElementById("${builderId}-autoVersion").onclick = adjustVisibility;
+            adjustVisibility();
+        }, 50);
+    </script>
 </j:jelly>

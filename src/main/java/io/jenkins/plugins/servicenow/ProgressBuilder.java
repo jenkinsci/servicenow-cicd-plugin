@@ -40,6 +40,8 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
 
     private JSONObject globalSNParams;
 
+    protected FilePath workspace;
+
     private RunFactory clientFactory;
     /**
      * Rest client initialized every time a build is performed and used by subclasses of the builder.
@@ -106,6 +108,8 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 
+        this.workspace = filePath;
+
         setupBuilderParameters(run.getEnvironment(taskListener));
 
         if(this.clientFactory == null) {
@@ -142,7 +146,7 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
     private int retrieveProgressCheckIntervalParameter(EnvVars environment) {
         Integer parameter = null;
         try {
-            parameter = getGlobalSNParams() != null && StringUtils.isNotBlank(getGlobalSNParams().getString(ServiceNowParameterDefinition.PARAMS_NAMES.progressCheckInterval)) ?
+            parameter = getGlobalSNParams() != null && getGlobalSNParams().getOrDefault(ServiceNowParameterDefinition.PARAMS_NAMES.progressCheckInterval, null) != null ?
                     getGlobalSNParams().getInt(ServiceNowParameterDefinition.PARAMS_NAMES.progressCheckInterval) :
                     Integer.parseInt(environment.get(BuildParameters.progressCheckInterval));
         } catch(NumberFormatException ex) {

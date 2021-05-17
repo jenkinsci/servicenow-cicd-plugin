@@ -30,6 +30,7 @@ public class ServiceNowParameterDefinitionTest extends TestCase {
         assertThat(resultValue.getString(ServiceNowParameterDefinition.PARAMS_NAMES.publishedAppVersion)).isBlank();
         assertThat(resultValue.containsKey(ServiceNowParameterDefinition.PARAMS_NAMES.rollbackAppVersion)).isTrue();
         assertThat(resultValue.getString(ServiceNowParameterDefinition.PARAMS_NAMES.rollbackAppVersion)).isBlank();
+        assertThat(resultValue.getString(ServiceNowParameterDefinition.PARAMS_NAMES.batchRollbackId)).isBlank();
     }
 
     @Test
@@ -93,6 +94,7 @@ public class ServiceNowParameterDefinitionTest extends TestCase {
         assertThat(parameterDefinition.getSysId()).isEqualTo(TestData.systemId);
         assertThat(parameterDefinition.getProgressCheckInterval()).isEqualTo(TestData.progressCheckInterval);
         assertThat(parameterDefinition.getDescription()).isBlank();
+        assertThat(parameterDefinition.getBatchRollbackId()).isEqualTo(TestData.batchRollbackId);
     }
 
     private void checkParameter(ParameterValue parametersValue, String paramName, String value) {
@@ -117,6 +119,7 @@ public class ServiceNowParameterDefinitionTest extends TestCase {
         String publishedAppVersion = "1028.0.4";
         String rollbackAppVersion = "1028.0.3";
         String systemId = "123erwqe";
+        String batchRollbackId = "qwerty";
         Integer progressCheckInterval = 100;
 
         static String getJson() {
@@ -130,6 +133,7 @@ public class ServiceNowParameterDefinitionTest extends TestCase {
                     "\"appScope\":\"" + applicationScope + "\"," +
                     "\"publishedAppVersion\":\"" + publishedAppVersion + "\"," +
                     "\"rollbackAppVersion\":\"" + rollbackAppVersion + "\"," +
+                    "\"batchRollbackId\":\"" + batchRollbackId + "\"," +
                     "\"progressCheckInterval\":\"" + progressCheckInterval + "\"}";
         }
     }

@@ -39,6 +39,8 @@ public class InstallAppBuilder extends ProgressBuilder {
     private String appSysId;
     private String appVersion;
     private String rollbackAppVersion;
+    private String baseAppVersion;
+    private Boolean baseAppAutoUpgrade;
 
     /**
      * duplicated variable for <code>appVersion</code>, because in <code>appVersion</code> must stay original value
@@ -77,6 +79,24 @@ public class InstallAppBuilder extends ProgressBuilder {
         this.appVersion = appVersion;
     }
 
+    public Boolean getBaseAppAutoUpgrade() {
+        return baseAppAutoUpgrade;
+    }
+
+    @DataBoundSetter
+    public void setBaseAppAutoUpgrade(Boolean baseAppAutoUpgrade) {
+        this.baseAppAutoUpgrade = baseAppAutoUpgrade;
+    }
+
+    public String getBaseAppVersion() {
+        return baseAppVersion;
+    }
+
+    @DataBoundSetter
+    public void setBaseAppVersion(String baseAppVersion) {
+        this.baseAppVersion = baseAppVersion;
+    }
+
     @Override
     protected boolean perform(Run<?, ?> run, @Nonnull final TaskListener taskListener, final Integer progressCheckInterval) {
         boolean result = false;
@@ -95,7 +115,12 @@ public class InstallAppBuilder extends ProgressBuilder {
 
         Result serviceNowResult = null;
         try {
-            serviceNowResult = getRestClient().installApp(this.getAppScope(), this.getAppSysId(), this.appVersionToInstall);
+            serviceNowResult = getRestClient().installApp(
+                    this.getAppScope(),
+                    this.getAppSysId(),
+                    this.appVersionToInstall,
+                    this.baseAppVersion,
+                    this.baseAppAutoUpgrade);
         } catch(ServiceNowApiException ex) {
             taskListener.getLogger().format("Error occurred when API with the action 'install application' was called: '%s' [details: '%s'].%n", ex.getMessage(), ex.getDetail());
         }  catch (UnknownHostException ex) {
@@ -221,6 +246,7 @@ public class InstallAppBuilder extends ProgressBuilder {
         }
 
 
+        @Nonnull
         @Override
         public String getDisplayName() {
             return Messages.InstallAppBuilder_DescriptorImpl_DisplayName();

@@ -13,7 +13,7 @@
     <packaging>hpi</packaging>
     <properties>
         <!-- Baseline Jenkins version you use to build the plugin. Users must have this version or newer to run. -->
-        <jenkins.version>2.176.1</jenkins.version>
+        <jenkins.version>2.176.4</jenkins.version>
         <java.level>8</java.level>
         <jackson.version>2.12.1</jackson.version>
     </properties>
@@ -28,7 +28,7 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <!-- Pick up common dependencies for 2.164.x: https://github.com/jenkinsci/bom#usage -->
+                <!-- Pick up common dependencies for Jenkins version (eg. 2.164.x): https://github.com/jenkinsci/bom#usage -->
                 <groupId>io.jenkins.tools.bom</groupId>
                 <artifactId>bom-2.164.x</artifactId>
                 <version>3</version>
@@ -116,7 +116,6 @@
             java.lang.NoSuchMethodError: com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor()
             -->
             <version>20.0</version>
-            <scope>test</scope>
         </dependency>
         <!-- end of mockserver dependencies-->
         <dependency>
@@ -193,9 +192,26 @@
         <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
-            <version>4.0</version>
+            <version>4.2.1</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jenkins-ci.tools</groupId>
+                <artifactId>maven-hpi-plugin</artifactId>
+                <configuration>
+                    <!-- JENKINS-50520: since we need a custom version of Guice -->
+                    <maskClasses>com.google.inject.
+                        com.google.common.
+                    </maskClasses>
+                    <minimumJavaVersion>8</minimumJavaVersion>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
 
     <developers>
       <developer>

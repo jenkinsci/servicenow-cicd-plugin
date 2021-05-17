@@ -6,10 +6,7 @@ import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.ParametersAction;
 import hudson.model.TaskListener;
-import io.jenkins.plugins.servicenow.api.ActionStatus;
 import io.jenkins.plugins.servicenow.api.ServiceNowAPIClient;
-import io.jenkins.plugins.servicenow.api.model.Result;
-import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,7 +26,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
-public class InstallAppBuilderTest {
+public class InstallAppBuilderTest extends BaseAPICallResultTest {
 
     private InstallAppBuilder installAppBuilder;
 
@@ -66,8 +63,11 @@ public class InstallAppBuilderTest {
         installAppBuilder.setApiVersion(InstallAppBuilderTest.TestData.apiVersion);
         installAppBuilder.setAppScope(TestData.scope);
         installAppBuilder.setAppSysId((TestData.sysId));
+        installAppBuilder.setBaseAppAutoUpgrade(TestData.updateBaseVersion);
+        installAppBuilder.setBaseAppVersion(TestData.baseAppVersion);
 
-        given(this.restClientMock.installApp(eq(TestData.scope), eq(TestData.sysId), eq(TestData.applicationVersion))).willReturn(getPendingResult());
+        given(this.restClientMock.installApp(eq(TestData.scope), eq(TestData.sysId), eq(TestData.applicationVersion),
+                eq(TestData.baseAppVersion), eq(TestData.updateBaseVersion))).willReturn(getPendingResult());
         given(this.restClientMock.checkProgress()).willReturn(getSuccessfulResult(100,null));
 
         // when
@@ -79,10 +79,15 @@ public class InstallAppBuilderTest {
         ArgumentCaptor<String> scopeCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> sysIdCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> appVersionCaptor = ArgumentCaptor.forClass(String.class);
-        verify(restClientMock, times(1)).installApp(scopeCaptor.capture(), sysIdCaptor.capture(), appVersionCaptor.capture());
+        ArgumentCaptor<String> baseAppVersionCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Boolean> updateBaseAppVersionCaptor = ArgumentCaptor.forClass(Boolean.class);
+        verify(restClientMock, times(1)).installApp(scopeCaptor.capture(), sysIdCaptor.capture(),
+                appVersionCaptor.capture(), baseAppVersionCaptor.capture(), updateBaseAppVersionCaptor.capture());
         assertThat(scopeCaptor.getValue(), is(TestData.scope));
         assertThat(sysIdCaptor.getValue(), is(TestData.sysId));
         assertThat(appVersionCaptor.getValue(), is(TestData.applicationVersion));
+        assertThat(baseAppVersionCaptor.getValue(), is(TestData.baseAppVersion));
+        assertThat(updateBaseAppVersionCaptor.getValue(), is(true));
 
         verify(restClientMock, times(1)).checkProgress();
     }
@@ -93,41 +98,21 @@ public class InstallAppBuilderTest {
         installAppBuilder.setUrl(TestData.url);
         installAppBuilder.setCredentialsId(TestData.credentials);
         installAppBuilder.setAppVersion(TestData.applicationVersion);
-        installAppBuilder.setApiVersion(InstallAppBuilderTest.TestData.apiVersion);
+        installAppBuilder.setApiVersion(TestData.apiVersion);
         installAppBuilder.setAppScope(TestData.scope);
         installAppBuilder.setAppSysId((TestData.sysId));
-        given(this.restClientMock.installApp(eq(TestData.scope), eq(TestData.sysId), eq(TestData.applicationVersion))).willReturn(getFailedResult("error"));
+        installAppBuilder.setBaseAppAutoUpgrade(TestData.updateBaseVersion);
+        installAppBuilder.setBaseAppVersion(TestData.baseAppVersion);
+        given(this.restClientMock.installApp(
+                eq(TestData.scope), eq(TestData.sysId), eq(TestData.applicationVersion),
+                eq(TestData.baseAppVersion), eq(TestData.updateBaseVersion)))
+                .willReturn(getFailedResult("error"));
 
         // when
         installAppBuilder.perform(runMock, null, launcherMock, taskListenerMock);
 
         // then
         // expect an exception
-    }
-
-    private Result getPendingResult() {
-        final Result result = new Result();
-        result.setStatus(ActionStatus.PENDING.getStatus());
-        return result;
-    }
-
-    private Result getSuccessfulResult(int percentComplete, String statusMessage) {
-        final Result result = new Result();
-        result.setStatus(ActionStatus.SUCCESSFUL.getStatus());
-        result.setPercentComplete(percentComplete);
-        if(StringUtils.isNotBlank(statusMessage)) {
-            result.setStatusMessage(statusMessage);
-        }
-        return result;
-    }
-
-    private Result getFailedResult(String errorMessage) {
-        final Result result = new Result();
-        result.setStatus(ActionStatus.FAILED.getStatus());
-        if(StringUtils.isNotBlank(errorMessage)) {
-            result.setStatusMessage(errorMessage);
-        }
-        return result;
     }
 
     private interface TestData {
@@ -137,6 +122,8 @@ public class InstallAppBuilderTest {
         String sysId = "123456789";
         String scope = "testScope";
         String applicationVersion = "1.0.1";
+        String baseAppVersion = "2.0.0";
+        Boolean updateBaseVersion = true;
     }
 
 }

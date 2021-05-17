@@ -194,7 +194,9 @@ public class ServiceNowAPIClientIntegrationTest {
     private String getNextApplicationVersionToBePublished(final ServiceNowAPIClient serviceNowAPIClient, String appSystemId) {
         final String currentVersion = serviceNowAPIClient.getCurrentAppVersion(null, appSystemId);
         validateApplicationVersion(currentVersion);
-        return PublishAppBuilder.getNextAppVersion(currentVersion);
+        PublishAppBuilder publisher = new PublishAppBuilder("");
+        publisher.setIncrementBy(1);
+        return publisher.getNextAppVersion(currentVersion);
     }
 
     private void validateApplicationVersion(final String applicationVersion) {
