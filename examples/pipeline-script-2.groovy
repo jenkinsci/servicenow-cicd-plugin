@@ -10,7 +10,7 @@ pipeline {
     stages {
         stage('preparation') {
             steps {
-                echo "${params.snParam}"
+                echo "${params.snParam}" // for debugging
 
                 snApplyChanges()
             }

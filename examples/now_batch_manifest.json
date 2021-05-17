@@ -1,0 +1,26 @@
+{
+  "name": "Release 2.2 Deployment",
+  "packages": [
+    {
+      "id": "syd_id_abcefghi",
+      "type": "application",
+      "load_demo_data": false,
+      "requested_version": "1.0.2",
+      "notes": "User specific text to describe this application install"
+    },
+    {
+      "id": "syd_id_defabcde",
+      "type": "application",
+      "requested_version": "1.0.0",
+      "requested_customization_version": "2.0.7",
+      "notes": "Customization for CSM App1"
+    },
+    {
+      "id": "com.glide.some.plugin",
+      "type": "plugin",
+      "load_demo_data": true,
+      "notes": "Plugin related notes"
+    }
+  ],
+  "notes": "User specified additional notes."
+}

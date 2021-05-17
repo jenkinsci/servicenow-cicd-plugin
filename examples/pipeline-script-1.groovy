@@ -1,4 +1,4 @@
-// Simple script with one step
+// Simple script with one step: apply changes from source control linked to the app repo
 
 pipeline {
     agent any
