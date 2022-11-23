@@ -101,7 +101,7 @@ Publishes the specified application and all of its artifacts to the application 
 
 &nbsp; | Description
 ------| ------------
-__Application version__ | Version under which to store the application. Provide 2 significant numbers separated by '.' eg. 1.0 (the third number will be automatically added with build number, what gives eg. 1.0.106).<br/>If the version number is passed, the publish process uses that version and updates the local application version if different. If the version number is not passed, the publish process uses the current version of the local application.
+__Application version__ | Version under which to store the application.<br/> You can either provide 2 significant numbers separated by '.' (MAJOR.MINOR), eg. 1.0 (the third number will be automatically added with build number, what gives eg. 1.0.106). or you can provide an exact version (MAJOR.MINOR.PATCH), e.g. 1.0.1.<br/>If the version number is passed, the publish process uses that version and updates the local application version if different. If the version number is not passed, the publish process uses the current version of the local application.
 __Calculate&nbsp;next&nbsp;application&nbsp;version__ | Calculate next application version that will be published. Retrieve it in smart way using API or source control (if SCM is configured for the build). API has the highest priority, then SCM will be used.<br/>__*The value from 'Application version' will be ignored.*__
 __The application is customized__ | The option should be checked if user works with application customization. Application system id is required in this case.
 __Configure auto-increment settings...__ | Application version can be incremented automatically during publishing using `increment by` factor.
