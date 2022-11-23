@@ -44,9 +44,12 @@ public class PublishAppBuilderTest extends BaseAPICallResultTest {
 
     @Before
     public void setUp() throws Exception {
+        EnvVars envVars = new EnvVars();
+        envVars.put("BUILD_NUMBER", TestData.buildNumber);
+
         this.publishAppBuilder = new PublishAppBuilder(TestData.credentials);
         this.publishAppBuilder.setClientFactory(clientFactoryMock);
-        given(this.runMock.getEnvironment(any())).willReturn(new EnvVars());
+        given(this.runMock.getEnvironment(any())).willReturn(envVars);
         given(this.clientFactoryMock.create(eq(runMock), eq(TestData.url), eq(TestData.credentials)))
                 .willReturn(restClientMock);
         given(taskListenerMock.getLogger()).willReturn(System.out);
@@ -54,18 +57,20 @@ public class PublishAppBuilderTest extends BaseAPICallResultTest {
     }
 
     @Test
-    public void performWithSuccess() throws IOException, InterruptedException, URISyntaxException {
+    public void performWithSuccessCalculatedVersion() throws IOException, InterruptedException, URISyntaxException {
         // given
         publishAppBuilder.setUrl(TestData.url);
         publishAppBuilder.setCredentialsId(TestData.credentials);
-        publishAppBuilder.setAppVersion(TestData.applicationVersion);
+        publishAppBuilder.setAppVersion(TestData.templateApplicationVersion);
         publishAppBuilder.setApiVersion(PublishAppBuilderTest.TestData.apiVersion);
         publishAppBuilder.setAppScope(TestData.scope);
         publishAppBuilder.setAppSysId((TestData.sysId));
         publishAppBuilder.setDevNotes(TestData.devNotes);
         publishAppBuilder.setObtainVersionAutomatically(false);
 
-        given(this.restClientMock.publishApp(eq(TestData.scope), eq(TestData.sysId), eq(TestData.applicationVersion), eq(TestData.devNotes))).willReturn(getPendingResult());
+        String calculatedVersion = String.join(".", TestData.templateApplicationVersion, TestData.buildNumber);
+
+        given(this.restClientMock.publishApp(eq(TestData.scope), eq(TestData.sysId), eq(calculatedVersion), eq(TestData.devNotes))).willReturn(getPendingResult());
         given(this.restClientMock.checkProgress()).willReturn(getSuccessfulResult(100,null));
 
         // when
@@ -81,7 +86,41 @@ public class PublishAppBuilderTest extends BaseAPICallResultTest {
         verify(restClientMock, times(1)).publishApp(scopeCaptor.capture(), sysIdCaptor.capture(), appVersionCaptor.capture(), devNotesCaptor.capture());
         assertThat(scopeCaptor.getValue(), is(TestData.scope));
         assertThat(sysIdCaptor.getValue(), is(TestData.sysId));
-        assertThat(appVersionCaptor.getValue(), is(TestData.applicationVersion));
+        assertThat(appVersionCaptor.getValue(), is(calculatedVersion));
+        assertThat(devNotesCaptor.getValue(), is(TestData.devNotes));
+
+        verify(restClientMock, times(1)).checkProgress();
+    }
+
+    @Test
+    public void performWithSuccessExactVersion() throws IOException, InterruptedException, URISyntaxException {
+        // given
+        publishAppBuilder.setUrl(TestData.url);
+        publishAppBuilder.setCredentialsId(TestData.credentials);
+        publishAppBuilder.setAppVersion(TestData.exactApplicationVersion);
+        publishAppBuilder.setApiVersion(PublishAppBuilderTest.TestData.apiVersion);
+        publishAppBuilder.setAppScope(TestData.scope);
+        publishAppBuilder.setAppSysId((TestData.sysId));
+        publishAppBuilder.setDevNotes(TestData.devNotes);
+        publishAppBuilder.setObtainVersionAutomatically(false);
+
+        given(this.restClientMock.publishApp(eq(TestData.scope), eq(TestData.sysId), eq(TestData.exactApplicationVersion), eq(TestData.devNotes))).willReturn(getPendingResult());
+        given(this.restClientMock.checkProgress()).willReturn(getSuccessfulResult(100,null));
+
+        // when
+        publishAppBuilder.perform(runMock, null, launcherMock, taskListenerMock);
+
+        // then
+        assertThat(publishAppBuilder.getRestClient(), is(restClientMock));
+
+        ArgumentCaptor<String> scopeCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> sysIdCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> appVersionCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> devNotesCaptor = ArgumentCaptor.forClass(String.class);
+        verify(restClientMock, times(1)).publishApp(scopeCaptor.capture(), sysIdCaptor.capture(), appVersionCaptor.capture(), devNotesCaptor.capture());
+        assertThat(scopeCaptor.getValue(), is(TestData.scope));
+        assertThat(sysIdCaptor.getValue(), is(TestData.sysId));
+        assertThat(appVersionCaptor.getValue(), is(TestData.exactApplicationVersion));
         assertThat(devNotesCaptor.getValue(), is(TestData.devNotes));
 
         verify(restClientMock, times(1)).checkProgress();
@@ -92,13 +131,13 @@ public class PublishAppBuilderTest extends BaseAPICallResultTest {
         // given
         publishAppBuilder.setUrl(TestData.url);
         publishAppBuilder.setCredentialsId(TestData.credentials);
-        publishAppBuilder.setAppVersion(TestData.applicationVersion);
+        publishAppBuilder.setAppVersion(TestData.exactApplicationVersion);
         publishAppBuilder.setApiVersion(PublishAppBuilderTest.TestData.apiVersion);
         publishAppBuilder.setAppScope(TestData.scope);
         publishAppBuilder.setAppSysId((TestData.sysId));
         publishAppBuilder.setDevNotes(TestData.devNotes);
         publishAppBuilder.setObtainVersionAutomatically(false);
-        given(this.restClientMock.publishApp(eq(TestData.scope), eq(TestData.sysId), eq(TestData.applicationVersion), eq(TestData.devNotes))).willReturn(getFailedResult("error"));
+        given(this.restClientMock.publishApp(eq(TestData.scope), eq(TestData.sysId), eq(TestData.exactApplicationVersion), eq(TestData.devNotes))).willReturn(getFailedResult("error"));
 
         // when
         publishAppBuilder.perform(runMock, null, launcherMock, taskListenerMock);
@@ -112,13 +151,13 @@ public class PublishAppBuilderTest extends BaseAPICallResultTest {
         // given
         publishAppBuilder.setUrl(TestData.url);
         publishAppBuilder.setCredentialsId(TestData.credentials);
-        publishAppBuilder.setAppVersion(TestData.applicationVersion);
+        publishAppBuilder.setAppVersion(TestData.exactApplicationVersion);
         publishAppBuilder.setApiVersion(PublishAppBuilderTest.TestData.apiVersion);
         publishAppBuilder.setAppScope(TestData.scope);
         publishAppBuilder.setAppSysId((TestData.sysId));
         publishAppBuilder.setDevNotes(TestData.devNotes);
         publishAppBuilder.setObtainVersionAutomatically(null);
-        given(this.restClientMock.publishApp(eq(TestData.scope), eq(TestData.sysId), eq(TestData.applicationVersion), eq(TestData.devNotes))).willReturn(getPendingResult());
+        given(this.restClientMock.publishApp(eq(TestData.scope), eq(TestData.sysId), eq(TestData.exactApplicationVersion), eq(TestData.devNotes))).willReturn(getPendingResult());
         given(this.restClientMock.checkProgress()).willReturn(getSuccessfulResult(100,null));
 
         // when
@@ -126,7 +165,7 @@ public class PublishAppBuilderTest extends BaseAPICallResultTest {
 
         // then
         assertThat(publishAppBuilder.getRestClient(), is(restClientMock));
-        verify(restClientMock, times(1)).publishApp(eq(TestData.scope), eq(TestData.sysId), eq(TestData.applicationVersion), eq(TestData.devNotes));
+        verify(restClientMock, times(1)).publishApp(eq(TestData.scope), eq(TestData.sysId), eq(TestData.exactApplicationVersion), eq(TestData.devNotes));
         verify(restClientMock, times(1)).checkProgress();
     }
 
@@ -136,7 +175,9 @@ public class PublishAppBuilderTest extends BaseAPICallResultTest {
         String credentials = "1234";
         String sysId = "123456789";
         String scope = "testScope";
-        String applicationVersion = "1.0.1";
+        String exactApplicationVersion = "1.0.1";
+        String templateApplicationVersion = "2.0";
+        String buildNumber = "3";
         String devNotes = "test developers note";
     }
 
