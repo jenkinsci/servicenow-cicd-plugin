@@ -1,7 +1,7 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
          xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-    <l:js src="plugin/servicenow-cicd/js/snbuilders-support.js"/>
+    <script src="${rootURL}/plugin/servicenow-cicd/js/snbuilders-support.js" type="text/javascript" />
     <j:set var="builderId" value="${descriptor.generateBuilderId()}"/>
     <f:entry title="${%UseFile}" field="useFile">
         <f:checkbox onclick="BatchInstallBuilder.adjustVisibility('${builderId}', this.checked)"/>
