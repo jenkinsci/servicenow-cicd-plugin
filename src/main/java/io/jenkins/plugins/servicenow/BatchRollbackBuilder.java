@@ -21,7 +21,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -51,7 +51,7 @@ public class BatchRollbackBuilder extends ProgressBuilder {
     }
 
     @Override
-    protected boolean perform(Run<?, ?> run, @Nonnull final TaskListener taskListener, final Integer progressCheckInterval) {
+    protected boolean perform(Run<?, ?> run, @NonNull final TaskListener taskListener, final Integer progressCheckInterval) {
         boolean result = false;
 
         taskListener.getLogger().println("\nSTART: ServiceNow - Batch Rollback (batch id: " + this.rollbackId + ")");

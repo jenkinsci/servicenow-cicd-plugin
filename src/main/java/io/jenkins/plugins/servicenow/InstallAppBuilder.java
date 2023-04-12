@@ -21,7 +21,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
@@ -98,7 +98,7 @@ public class InstallAppBuilder extends ProgressBuilder {
     }
 
     @Override
-    protected boolean perform(Run<?, ?> run, @Nonnull final TaskListener taskListener, final Integer progressCheckInterval) {
+    protected boolean perform(Run<?, ?> run, @NonNull final TaskListener taskListener, final Integer progressCheckInterval) {
         boolean result = false;
 
         taskListener.getLogger().println("\nSTART: ServiceNow - Install the specified application (version: " + Optional.ofNullable(this.appVersionToInstall).orElse("the latest") + ")");
@@ -246,7 +246,7 @@ public class InstallAppBuilder extends ProgressBuilder {
         }
 
 
-        @Nonnull
+        @NonNull
         @Override
         public String getDisplayName() {
             return Messages.InstallAppBuilder_DescriptorImpl_DisplayName();
