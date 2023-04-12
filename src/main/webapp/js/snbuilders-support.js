@@ -1,7 +1,8 @@
 // Javascript code used by ServiceNow builders.
 // Created: April, 2021
 
-const BatchInstallBuilder = {
+if (typeof BatchInstallBuilder === "undefined") {
+  var BatchInstallBuilder = {
     adjustVisibility: (builderId, useFile) => {
         useFile = useFile || false;
         if (useFile) {
@@ -16,9 +17,11 @@ const BatchInstallBuilder = {
             Visibility.setVisibility(document.querySelector('#' + builderId + '-notes'), true);
         }
     }
+  }
 }
 
-const InstanceScanBuilder = {
+if (typeof InstanceScanBuilder === "undefined") {
+  var InstanceScanBuilder = {
     adjustVisibility: (builderId, scanType) => {
         switch(scanType) {
             case 'fullScan':
@@ -76,9 +79,11 @@ const InstanceScanBuilder = {
         Visibility.show(document.getElementById(builderId + '-suite'));
         Visibility.show(document.getElementById(builderId + '-requestBody'));
     }
+  }
 }
 
-const Visibility = {
+if (typeof Visibility === "undefined") {
+  var Visibility = {
     hide: (element) => {
         Visibility.setVisibility(element, false);
     },
@@ -97,5 +102,6 @@ const Visibility = {
         }
 
     }
+  }
 }
 
