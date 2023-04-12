@@ -22,7 +22,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import java.text.MessageFormat;
 
 /**
@@ -127,7 +127,7 @@ public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
     }
 
     @Override
-    protected boolean perform(Run<?, ?> run, @Nonnull final TaskListener taskListener, final Integer progressCheckInterval) {
+    protected boolean perform(Run<?, ?> run, @NonNull final TaskListener taskListener, final Integer progressCheckInterval) {
         boolean result = false;
 
         taskListener.getLogger().printf("%nSTART: ServiceNow - Run test suite '%s' [%s]", this.getTestSuiteName(), this.getTestSuiteSysId());
@@ -197,7 +197,7 @@ public class RunTestSuiteWithResultsBuilder extends ProgressBuilder {
         }
     }
 
-    private boolean generateTestResult(@Nonnull TaskListener taskListener, final Result serviceNowResult) {
+    private boolean generateTestResult(@NonNull TaskListener taskListener, final Result serviceNowResult) {
         if(Boolean.TRUE.equals(this.withResults)) {
             final String testSuiteResultsId = serviceNowResult.getLinks().getResults() != null ?
                     serviceNowResult.getLinks().getResults().getId() : StringUtils.EMPTY;

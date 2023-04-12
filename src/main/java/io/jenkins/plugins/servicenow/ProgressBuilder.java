@@ -22,7 +22,7 @@ import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.springframework.util.StopWatch;
 
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Collections;
@@ -103,8 +103,8 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
     }
 
     @Override
-    public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher,
-            @Nonnull TaskListener taskListener) throws InterruptedException, IOException {
+    public void perform(@NonNull Run<?, ?> run, @NonNull FilePath filePath, @NonNull Launcher launcher,
+            @NonNull TaskListener taskListener) throws InterruptedException, IOException {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 
@@ -155,7 +155,7 @@ public abstract class ProgressBuilder extends Builder implements SimpleBuildStep
         return parameter == null ? Constants.PROGRESS_CHECK_INTERVAL : parameter.intValue();
     }
 
-    protected abstract boolean perform(Run<?, ?> run, @Nonnull final TaskListener taskListener, final Integer progressCheckInterval);
+    protected abstract boolean perform(Run<?, ?> run, @NonNull final TaskListener taskListener, final Integer progressCheckInterval);
 
     protected void setupBuilderParameters(EnvVars environment) {
         final String globalSNParams = environment.get(ServiceNowParameterDefinition.PARAMETER_NAME);
