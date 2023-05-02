@@ -134,6 +134,11 @@
                     <groupId>com.google.guava</groupId>
                     <artifactId>guava</artifactId>
                 </exclusion>
+                <!-- Provided by plugin parent POM --> 
+                <exclusion>
+                    <groupId>javax.servlet</groupId>
+                    <artifactId>servlet-api</artifactId>
+                </exclusion>
                 <!-- Provided by commons-lang3-api plugin -->
                 <exclusion>
                     <groupId>org.apache.commons</groupId>
