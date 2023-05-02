@@ -1,19 +1,19 @@
 package io.jenkins.plugins.servicenow.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import hudson.ProxyConfiguration;
 import hudson.util.Secret;
 import io.jenkins.plugins.servicenow.api.model.Error;
 import io.jenkins.plugins.servicenow.api.model.Response;
 import io.jenkins.plugins.servicenow.api.model.Result;
 import io.jenkins.plugins.servicenow.api.model.TableResponse;
+import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpHeaders;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
+import org.apache.http.*;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -385,7 +385,7 @@ public class ServiceNowAPIClient {
     }
 
     private Response get(final String endpointPath, final List<NameValuePair> parameters) {
-        try(CloseableHttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(getCredentials()).build()) {
+        try(CloseableHttpClient client = (CloseableHttpClient) getHttpClient(getCredentials())) {
 
             HttpGet request = new HttpGet();
             HttpResponse response = sendRequest(client, request, endpointPath, parameters, null); //client.execute(request);
@@ -407,7 +407,7 @@ public class ServiceNowAPIClient {
     }
 
     private TableResponse getTable(final String endpointPath, final List<NameValuePair> parameters) {
-        try(CloseableHttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(getCredentials()).build()) {
+        try(CloseableHttpClient client = (CloseableHttpClient) getHttpClient(getCredentials())) {
 
             HttpGet request = new HttpGet();
             HttpResponse response = sendRequest(client, request, endpointPath, parameters, null); //client.execute(request);
@@ -432,7 +432,7 @@ public class ServiceNowAPIClient {
 
     private Response post(final String endpointPath, final List<NameValuePair> parameters, final String jsonBody) throws URISyntaxException, IOException {
         this.lastActionProgressUrl = StringUtils.EMPTY;
-        try(CloseableHttpClient client = HttpClientBuilder.create().setDefaultCredentialsProvider(getCredentials()).build()) {
+        try(CloseableHttpClient client = (CloseableHttpClient) getHttpClient(getCredentials())) {
 
             HttpPost request = new HttpPost();
             HttpResponse response = sendRequest(client, request, endpointPath, parameters, jsonBody);
@@ -450,6 +450,38 @@ public class ServiceNowAPIClient {
             LOG.error(ex);
             throw ex;
         }
+    }
+
+    private HttpClient getHttpClient(CredentialsProvider credentialsProvider) throws IOException {
+
+        HttpClientBuilder clientBuilder = HttpClientBuilder.create();
+
+        ProxyConfiguration proxyConfiguration = null;
+        try {
+            proxyConfiguration = Jenkins.get().proxy;
+        } catch (IllegalStateException ex) {
+            // No Jenkins instance, continue without proxy
+        }
+
+        if(proxyConfiguration != null) {
+
+            String name = proxyConfiguration.name;
+            int port = proxyConfiguration.port;
+            String userName = proxyConfiguration.getUserName();
+
+            if(userName != null) {
+                LOG.info("Setting credentials");
+                credentialsProvider.setCredentials(
+                        new AuthScope(name, port),
+                        new UsernamePasswordCredentials(userName, proxyConfiguration.getPassword()));
+            }
+
+            clientBuilder.setProxy(new HttpHost(name, port));
+        }
+
+        clientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+
+        return clientBuilder.build();
     }
 
     private Response getResponse(HttpResponse response) throws IOException {
