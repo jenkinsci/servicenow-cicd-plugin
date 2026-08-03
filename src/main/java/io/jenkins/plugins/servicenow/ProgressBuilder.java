@@ -18,7 +18,7 @@ import io.jenkins.plugins.servicenow.parameter.ServiceNowParameterDefinition;
 import jenkins.tasks.SimpleBuildStep;
 import net.sf.json.JSONObject;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.springframework.util.StopWatch;
 

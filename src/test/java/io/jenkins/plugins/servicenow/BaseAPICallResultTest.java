@@ -4,7 +4,7 @@ import io.jenkins.plugins.servicenow.api.ActionStatus;
 import io.jenkins.plugins.servicenow.api.model.LinkObject;
 import io.jenkins.plugins.servicenow.api.model.Links;
 import io.jenkins.plugins.servicenow.api.model.Result;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public abstract class BaseAPICallResultTest {
 

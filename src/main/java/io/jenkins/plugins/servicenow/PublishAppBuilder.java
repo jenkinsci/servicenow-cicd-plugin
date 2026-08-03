@@ -11,7 +11,7 @@ import io.jenkins.plugins.servicenow.api.model.Result;
 import io.jenkins.plugins.servicenow.application.ApplicationVersion;
 import io.jenkins.plugins.servicenow.parameter.ServiceNowParameterDefinition;
 import io.jenkins.plugins.servicenow.utils.Validator;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.jenkinsci.Symbol;
