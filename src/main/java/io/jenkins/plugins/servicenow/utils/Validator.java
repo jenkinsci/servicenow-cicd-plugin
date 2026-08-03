@@ -1,6 +1,6 @@
 package io.jenkins.plugins.servicenow.utils;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Validator class to validate content of fields used by different components of the plugin.

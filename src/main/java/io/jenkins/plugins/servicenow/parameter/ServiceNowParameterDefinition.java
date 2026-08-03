@@ -8,7 +8,7 @@ import io.jenkins.plugins.servicenow.Constants;
 import io.jenkins.plugins.servicenow.Messages;
 import io.jenkins.plugins.servicenow.utils.Validator;
 import net.sf.json.JSONObject;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;

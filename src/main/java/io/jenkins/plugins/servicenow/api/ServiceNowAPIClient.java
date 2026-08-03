@@ -6,7 +6,7 @@ import io.jenkins.plugins.servicenow.api.model.Error;
 import io.jenkins.plugins.servicenow.api.model.Response;
 import io.jenkins.plugins.servicenow.api.model.Result;
 import io.jenkins.plugins.servicenow.api.model.TableResponse;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;

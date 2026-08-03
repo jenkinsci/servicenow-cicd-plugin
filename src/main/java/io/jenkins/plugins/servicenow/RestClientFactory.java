@@ -6,7 +6,7 @@ import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import hudson.model.Run;
 import hudson.util.Secret;
 import io.jenkins.plugins.servicenow.api.ServiceNowAPIClient;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class RestClientFactory implements RunFactory<ServiceNowAPIClient> {
 

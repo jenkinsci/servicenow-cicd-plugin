@@ -3,7 +3,7 @@ package io.jenkins.plugins.servicenow.parameter;
 import hudson.model.StringParameterValue;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class ServiceNowParameterValue extends StringParameterValue {
 

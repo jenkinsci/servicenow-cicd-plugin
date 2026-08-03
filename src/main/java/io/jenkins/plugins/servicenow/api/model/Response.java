@@ -2,7 +2,7 @@ package io.jenkins.plugins.servicenow.api.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class  Response extends JsonResponseObject {
